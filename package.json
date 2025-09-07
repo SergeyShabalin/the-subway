@@ -11,8 +11,10 @@
     "preview": "rsbuild preview"
   },
   "dependencies": {
+    "konva": "^9.3.22",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "react-konva": "^19.0.7"
   },
   "devDependencies": {
     "@rsbuild/core": "^1.5.2",
