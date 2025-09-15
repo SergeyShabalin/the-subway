@@ -1,11 +1,12 @@
-import { FlowExample } from './components/flow-example.tsx'
 import './global.css'
+import { MainField } from './components'
 
 const App = () => {
   return (
-    <div className="content" >
+    <div className="content">
       <h1>Subway</h1>
-      <FlowExample />
+
+      <MainField />
     </div>
   )
 }

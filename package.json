@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "build": "rsbuild build",
-    "check": "biome check --write",
     "dev": "rsbuild dev --open",
     "format": "biome format --write",
     "preview": "rsbuild preview"
@@ -19,6 +18,7 @@
   "devDependencies": {
     "@rsbuild/core": "^1.5.2",
     "@rsbuild/plugin-react": "^1.4.0",
+    "@types/node": "^24.4.0",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "eslint": "^9.35.0",
