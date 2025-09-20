@@ -1,1 +1,5 @@
 export { MainField } from './main-field/main-field.tsx'
+export { Stations } from './stations/stations.tsx'
+export { Lines } from './lines/lines.tsx'
+export { ControlPanel } from './control-panel/control-panel.tsx'
+export { StationLabels } from './station-labels/station-labels.tsx'

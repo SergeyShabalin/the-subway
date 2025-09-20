@@ -22,8 +22,8 @@ const useInteractiveStage = ({
   stageRef,
   canMove = true,
 }: IUseZoomingMainFieldOptions): TUseInteractiveStageReturn => {
-  const [scale, setScale] = useState(1)
-  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [scale, setScale] = useState(0.6)
+  const [position, setPosition] = useState({ x: 500, y: 200 })
   const [isDragging, setIsDragging] = useState(false)
   const [lastPos, setLastPos] = useState({ x: 0, y: 0 })
 
@@ -43,7 +43,6 @@ const useInteractiveStage = ({
         newScale,
         position,
       })
-
       setScale(newScale)
       setPosition(newPos)
     },

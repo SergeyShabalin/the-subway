@@ -10,10 +10,13 @@
     "preview": "rsbuild preview"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.9.0",
     "konva": "^9.3.22",
+    "lodash": "^4.17.21",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-konva": "^19.0.7"
+    "react-konva": "^19.0.7",
+    "react-redux": "^9.2.0"
   },
   "devDependencies": {
     "@rsbuild/core": "^1.5.2",

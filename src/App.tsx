@@ -1,12 +1,23 @@
 import './global.css'
-import { MainField } from './components'
+import { ControlPanel, MainField } from './components'
+import { useState } from 'react'
 
 const App = () => {
+  const [freeMoving, setFreeMoving] = useState<boolean>(true)
+
   return (
     <div className="content">
-      <h1>Subway</h1>
-
-      <MainField />
+      <label style={{ color: 'white', padding: '10px' }}>
+        <input
+          type="checkbox"
+          checked={freeMoving}
+          onChange={() => setFreeMoving(!freeMoving)}
+          title={'Режим свободного перемещения'}
+        />
+        Режим свободного перемещения
+      </label>
+      <ControlPanel />
+      <MainField freeMooving={freeMoving} />
     </div>
   )
 }
