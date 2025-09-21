@@ -120,23 +120,17 @@ export const Station = memo(({
   }, [dragOffsetsRef, stageRef, station])
 
   const handleDragEnd = useCallback((e: any) => {
-    const node = e.target
-    // фактические координаты круга на сцене
-    const newX = node.x()
-    const newY = node.y()
-
-    dispatch(updateStationPosition({
-      stationId: station.id,
-      x: newX,
-      y: newY,
-    }))
-
-    // сброс временного смещения
+    // сначала сразу сбрасываем offset
     delete dragOffsetsRef.current[station.id]
 
-    // чтобы konva-нода вернулась в «ноль» относительно Redux-координат
-    node.position({ x: newX, y: newY })
+    // потом отправляем координаты в Redux
+    dispatch(updateStationPosition({
+      stationId: station.id,
+      x: e.target.x(),
+      y: e.target.y()
+    }))
   }, [dispatch, station, dragOffsetsRef])
+
 
 
   return (

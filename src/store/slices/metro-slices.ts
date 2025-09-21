@@ -1,8 +1,6 @@
-import { createSlice } from '@reduxjs/toolkit'
-import type { PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { metroNetwork } from '../data/metro-network.ts'
 
-// Типы данных
 export type Station = {
   id: number
   x: number
@@ -22,24 +20,22 @@ export type Line = {
   id: number
   color: string
   name: string
-  stations: Array<Station>
-  segments: Array<Segment>
+  stations: Station[]
+  segments: Segment[]
   isCircular: boolean
   renderStyle: 'linear' | 'circular'
   locking?: boolean
   curvatureLines?: number
 }
 
-// Состояние стора
 export interface MetroState {
-  metroNetwork: Array<Line>
+  metroNetwork: Line[]
   activeLineId: number | null
-  selectedStations: number[] // 👈 Было Set<number>, стало number[]
+  selectedStations: number[]
 }
 
-// Начальное состояние
 const initialState: MetroState = {
-  metroNetwork: metroNetwork,
+  metroNetwork,
   activeLineId: metroNetwork[0]?.id || null,
   selectedStations: [],
 }
@@ -48,134 +44,99 @@ const metroSlice = createSlice({
   name: 'metro',
   initialState,
   reducers: {
-    // Изменить позицию станции
     updateStationPosition: (
       state,
-      action: PayloadAction<{ stationId: number; x: number; y: number }>,
+      action: PayloadAction<{ stationId: number; x: number; y: number }>
     ) => {
       const { stationId, x, y } = action.payload
-      console.log('позиция станции в редаксе изменена')
-      const lineIndex = state.metroNetwork.findIndex((line) =>
-        line.stations.some((station) => station.id === stationId)
-      )
 
+      // Находим линию и станцию
+      const lineIndex = state.metroNetwork.findIndex(line =>
+        line.stations.some(st => st.id === stationId)
+      )
       if (lineIndex === -1) return
 
       const line = state.metroNetwork[lineIndex]
       const stationIndex = line.stations.findIndex(s => s.id === stationId)
+      if (stationIndex === -1) return
 
-      const station = line.stations[stationIndex]
+      // Создаём полностью новый объект станции
+      const updatedStation: Station = {
+        ...line.stations[stationIndex],
+        x,
+        y,
+      }
 
-      // 👇 КЛЮЧЕВОЙ ХАК: если координаты не изменились — НИЧЕГО НЕ ДЕЛАЕМ!
-      if (station.x === x && station.y === y) return
-
-      // Создаём новую станцию
-      const updatedStation = { ...station, x, y }
-
-      // Создаём новый массив станций ТОЛЬКО для этой линии
+      // Новый массив станций
       const updatedStations = [
         ...line.stations.slice(0, stationIndex),
         updatedStation,
         ...line.stations.slice(stationIndex + 1),
       ]
 
-      // Создаём новую линию — только если станции изменились
-      const updatedLine = {
+      // Новая линия
+      const updatedLine: Line = {
         ...line,
         stations: updatedStations,
       }
 
-      // 👇 СРАВНИВАЕМ ЛИНИЮ ПО ССЫЛКЕ — если она не изменилась, оставляем старую
-      const oldLine = state.metroNetwork[lineIndex]
-      if (
-        oldLine === updatedLine || // ссылка — не подойдёт, потому что объекты разные
-        (oldLine.color === updatedLine.color &&
-          oldLine.name === updatedLine.name &&
-          oldLine.renderStyle === updatedLine.renderStyle &&
-          oldLine.isCircular === updatedLine.isCircular &&
-          oldLine.locking === updatedLine.locking &&
-          oldLine.segments.length === updatedLine.segments.length &&
-          oldLine.segments.every(seg =>
-            updatedLine.segments.find(u => u.fromStationId === seg.fromStationId && u.toStationId === seg.toStationId && u.timeMinutes === seg.timeMinutes)
-          ))
-      ) {
-        // 👇 Если линия не изменилась по содержимому — не заменяем её!
-        // Но мы уже создали updatedStations — значит, линия изменилась.
-        // Поэтому мы НЕ можем пропустить обновление — просто не делаем лишних копий.
-      }
-
-      // 👇 ВСЁ РАВНО создаём новый массив линий — но это ОК, потому что мы будем мемоизировать в компонентах
-      const newMetroNetwork = [
+      // Новый массив линий
+      state.metroNetwork = [
         ...state.metroNetwork.slice(0, lineIndex),
         updatedLine,
         ...state.metroNetwork.slice(lineIndex + 1),
       ]
-
-      // 👇 УБЕДИСЬ, что ты НЕ мутируешь state — ты это делаешь правильно
-      state.metroNetwork = newMetroNetwork
     },
 
     setActiveLineId: (state, action: PayloadAction<number | null>) => {
       state.activeLineId = action.payload
     },
+
     updateLineCurvature: (
       state,
       action: PayloadAction<{ lineId: number; curvature: number }>
     ) => {
       const { lineId, curvature } = action.payload
-
-      state.metroNetwork = state.metroNetwork.map((line) =>
-        line.id === lineId
-          ? {
-            ...line,
-            curvatureLines: curvature,
-          }
-          : line
+      state.metroNetwork = state.metroNetwork.map(line =>
+        line.id === lineId ? { ...line, curvatureLines: curvature } : line
       )
     },
-    // Выравнивание круговой ветки"
+
     alignLineToCircle: (
       state,
-      action: PayloadAction<{
-        lineId: number
-        radius: number
-      }>
+      action: PayloadAction<{ lineId: number; radius: number }>
     ) => {
       const { lineId, radius } = action.payload
-
-      state.metroNetwork = state.metroNetwork.map((line) => {
+      state.metroNetwork = state.metroNetwork.map(line => {
         if (line.id !== lineId || !line.locking) return line
-
-        const stations = [...line.stations]
-        const n = stations.length
+        const n = line.stations.length
         if (n < 2) return line
 
-        const centerX = stations.reduce((sum, s) => sum + s.x, 0) / n
-        const centerY = stations.reduce((sum, s) => sum + s.y, 0) / n
+        const centerX = line.stations.reduce((sum, s) => sum + s.x, 0) / n
+        const centerY = line.stations.reduce((sum, s) => sum + s.y, 0) / n
+        const firstAngle = Math.atan2(
+          line.stations[0].y - centerY,
+          line.stations[0].x - centerX
+        )
 
-        const firstStation = stations[0]
-        const firstAngle = Math.atan2(firstStation.y - centerY, firstStation.x - centerX)
+        const newStations = line.stations.map((s, i) => ({
+          ...s,
+          x: centerX + radius * Math.cos(firstAngle - (i * 2 * Math.PI) / n),
+          y: centerY + radius * Math.sin(firstAngle - (i * 2 * Math.PI) / n),
+        }))
 
-        const newStations = stations.map((station, i) => {
-
-          const angle = firstAngle - (i * (2 * Math.PI)) / n
-
-          return {
-            ...station,
-            x: centerX + radius * Math.cos(angle),
-            y: centerY + radius * Math.sin(angle),
-          }
-        })
-        console.log(newStations)
-        return {
-          ...line,
-          stations: newStations,
-        }
+        return { ...line, stations: newStations }
       })
     },
   },
 })
 
-export const { updateStationPosition, alignLineToCircle, setActiveLineId, updateLineCurvature } = metroSlice.actions
+export const {
+  updateStationPosition,
+  setActiveLineId,
+  updateLineCurvature,
+  alignLineToCircle,
+} = metroSlice.actions
 
 export default metroSlice.reducer
+
