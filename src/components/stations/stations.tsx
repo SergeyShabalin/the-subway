@@ -1,55 +1,38 @@
-// Stations.tsx
-
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import { useMetro } from '../../store/hooks/use-metro.ts'
 import { Station } from './station/station.tsx'
+import type { Stage } from 'konva/lib/Stage'
 
 interface StationsProps {
-  dragOffsets: Record<number, { x: number; y: number }>
-  updateDragOffset: (stationId: number, dx: number, dy: number) => void
-  clearDragOffset: (stationId: number) => void
+  dragOffsetsRef: React.MutableRefObject<Record<number, { x: number; y: number }>>
+  stageRef: React.RefObject<Stage>
 }
 
-const Stations = ({ dragOffsets, updateDragOffset, clearDragOffset }: StationsProps) => {
+export const Stations = ({ dragOffsetsRef, stageRef }: StationsProps) => {
   const { metroNetwork } = useMetro()
   const [hoveredStationId, setHoveredStationId] = useState<number | null>(null)
 
-  const handleMouseEnter = useCallback((id: number) => {
-    setHoveredStationId(id)
-  }, [])
+  const handleMouseEnter = useCallback((id: number) => setHoveredStationId(id), [])
+  const handleMouseLeave = useCallback(() => setHoveredStationId(null), [])
 
-  const handleMouseLeave = useCallback(() => {
-    setHoveredStationId(null)
-  }, [])
-
-  // 👇 Важно: мы больше не вызываем updateStationPosition здесь — только в Station
-  // Поэтому handleDragMove и handleDragEnd — не нужны!
-
-  const memoizedStations = useMemo(() =>
-      metroNetwork.flatMap((line) =>
-        line.stations.map((station) => ({
-          ...station,
-        })),
-      ),
+  const stations = useMemo(
+    () => metroNetwork.flatMap(line => line.stations),
     [metroNetwork]
   )
 
   return (
     <>
-      {memoizedStations.map((station) => (
+      {stations.map(station => (
         <Station
-          dragOffsets={dragOffsets}
           key={`station-${station.id}`}
           station={station}
+          dragOffsetsRef={dragOffsetsRef}
+          stageRef={stageRef}
           hoveredStationId={hoveredStationId}
           handleMouseEnter={handleMouseEnter}
           handleMouseLeave={handleMouseLeave}
-          updateDragOffset={updateDragOffset}
-          clearDragOffset={clearDragOffset}
         />
       ))}
     </>
   )
 }
-
-export { Stations }

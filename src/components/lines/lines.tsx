@@ -1,89 +1,83 @@
-// Lines.tsx — теперь рисует с offset’ами!
-
-import { CurvedLine } from './curved-line/curved-line.tsx'
-import { StraightLine } from './straight-line/straight-line.tsx'
-import { DiameterLine } from './diameter-line/diameter-line.tsx'
+import { FC } from 'react'
 import { useMetro } from '../../store/hooks/use-metro.ts'
-import type { FC, ReactNode } from 'react'
+import { StraightLine } from './straight-line/straight-line.tsx'
+import { CurvedLine } from './curved-line/curved-line.tsx'
+import { DiameterLine } from './diameter-line/diameter-line.tsx'
+import type { Stage } from 'konva/lib/Stage'
 
 interface LinesProps {
-  dragOffsets: Record<number, { x: number; y: number }>
+  dragOffsetsRef: React.MutableRefObject<Record<number, { x: number; y: number }>>
+  stageRef: React.RefObject<Stage>
 }
 
-export const Lines: FC<LinesProps> = ({ dragOffsets }) => {
+export const Lines: FC<LinesProps> = ({ dragOffsetsRef }) => {
   const { metroNetwork } = useMetro()
 
   return (
     <>
-      {metroNetwork.flatMap((line) => {
+      {metroNetwork.flatMap(line => {
         const segments = [...line.segments]
 
         if (line.locking && line.stations.length >= 2) {
-          const firstStation = line.stations[0]
-          const lastStation = line.stations[line.stations.length - 1]
-
-          const hasExistingSegment = line.segments.some(
-            (seg) =>
-              seg.fromStationId === lastStation.id &&
-              seg.toStationId === firstStation.id,
+          const first = line.stations[0]
+          const last = line.stations[line.stations.length - 1]
+          const hasLoop = line.segments.some(
+            seg => seg.fromStationId === last.id && seg.toStationId === first.id
           )
-
-          if (!hasExistingSegment) {
-            segments.push({
-              fromStationId: lastStation.id,
-              toStationId: firstStation.id,
-              timeMinutes: 0,
-            })
+          if (!hasLoop) {
+            segments.push({ fromStationId: last.id, toStationId: first.id, timeMinutes: 0 })
           }
         }
 
-        return segments.flatMap((segment) => {
-          const fromStation = line.stations.find(
-            (s) => s.id === segment.fromStationId,
-          )
-          const toStation = line.stations.find(
-            (s) => s.id === segment.toStationId,
-          )
+        return segments.flatMap(seg => {
+          const from = line.stations.find(s => s.id === seg.fromStationId)
+          const to = line.stations.find(s => s.id === seg.toStationId)
+          if (!from || !to) return []
 
-          if (!fromStation || !toStation) return []
+          const offsetFrom = dragOffsetsRef.current[from.id] || { x: 0, y: 0 }
+          const offsetTo = dragOffsetsRef.current[to.id] || { x: 0, y: 0 }
 
-          // 👇 ИСПОЛЬЗУЕМ dragOffsets — В РЕАЛЬНОМ ВРЕМЕНИ!
-          const fromX = fromStation.x + (dragOffsets[fromStation.id]?.x || 0)
-          const fromY = fromStation.y + (dragOffsets[fromStation.id]?.y || 0)
-          const toX = toStation.x + (dragOffsets[toStation.id]?.x || 0)
-          const toY = toStation.y + (dragOffsets[toStation.id]?.y || 0)
+          const fromPos = { ...from, x: from.x + offsetFrom.x, y: from.y + offsetFrom.y }
+          const toPos = { ...to, x: to.x + offsetTo.x, y: to.y + offsetTo.y }
 
-          const renderers: Record<string, ReactNode> = {
-            linear: (
+          const key = `${line.id}-${seg.fromStationId}-${seg.toStationId}`
+          if (line.renderStyle === 'linear') {
+            return (
               <StraightLine
-                key={`${line.id}-${segment.fromStationId}-${segment.toStationId}`}
+                key={key}
+                id={`line-${line.id}-${seg.fromStationId}-${seg.toStationId}`}
                 line={line}
-                segment={segment}
-                fromStation={{ ...fromStation, x: fromX, y: fromY }} // 👈 Передаём смещённые координаты
-                toStation={{ ...toStation, x: toX, y: toY }}
+                segment={seg}
+                fromStation={fromPos}
+                toStation={toPos}
               />
-            ),
-            circular: (
-              <CurvedLine
-                key={`${line.id}-${segment.fromStationId}-${segment.toStationId}`}
-                line={line}
-                segment={segment}
-                fromStation={{ ...fromStation, x: fromX, y: fromY }}
-                toStation={{ ...toStation, x: toX, y: toY }}
-              />
-            ),
-            diameter: (
-              <DiameterLine
-                key={`${line.id}-${segment.fromStationId}-${segment.toStationId}`}
-                line={line}
-                segment={segment}
-                fromStation={{ ...fromStation, x: fromX, y: fromY }}
-                toStation={{ ...toStation, x: toX, y: toY }}
-              />
-            ),
+            )
           }
-
-          return renderers[line.renderStyle] ? [renderers[line.renderStyle]] : []
+          if (line.renderStyle === 'circular') {
+            return (
+              <CurvedLine
+                key={key}
+                id={`line-${line.id}-${seg.fromStationId}-${seg.toStationId}`}
+                line={line}
+                segment={seg}
+                fromStation={fromPos}
+                toStation={toPos}
+              />
+            )
+          }
+          if (line.renderStyle === 'diameter') {
+            return (
+              <DiameterLine
+                key={key}
+                id={`line-${line.id}-${seg.fromStationId}-${seg.toStationId}`}
+                line={line}
+                segment={seg}
+                fromStation={fromPos}
+                toStation={toPos}
+              />
+            )
+          }
+          return []
         })
       })}
     </>

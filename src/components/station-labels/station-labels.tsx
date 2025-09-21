@@ -1,39 +1,35 @@
-// StationLabels.tsx
-
 import { Text } from 'react-konva'
 import { useMetro } from '../../store/hooks/use-metro.ts'
 
-interface StationLabelProps {
-  dragOffsets: Record<number, { x: number; y: number }>
+interface StationLabelsProps {
+  dragOffsetsRef: React.MutableRefObject<Record<number, { x: number; y: number }>>
 }
 
-const StationLabels = ({ dragOffsets }: StationLabelProps) => {
+export const StationLabels = ({ dragOffsetsRef }: StationLabelsProps) => {
   const { metroNetwork } = useMetro()
 
   return (
     <>
-      {metroNetwork.flatMap((line) =>
-        line.stations.map((station) => {
-          const offset = dragOffsets[station.id] || { x: 0, y: 0 }
-          console.log(offset, offset.x, offset.y)
+      {metroNetwork.flatMap(line =>
+        line.stations.map(station => {
+          const offset = dragOffsetsRef.current[station.id] || { x: 0, y: 0 }
           return (
             <Text
               key={`label-${station.id}`}
-              x={station.x + station.labelOffset.x + offset.x }
-              y={station.y + station.labelOffset.y + offset.y}
-              text={`${station.id} ${station.label}`}
+              id={`label-${station.id}`}
+              x={station.x + (station.labelOffset?.x || 0) + offset.x}
+              y={station.y + (station.labelOffset?.y || 0) + offset.y}
+              text={station.label}
               fontSize={14}
-              fontFamily="Arial, sans-serif"
+              fontFamily="Arial"
               fill="#9CEEF7"
               align="center"
               verticalAlign="middle"
               letterSpacing={1.2}
             />
           )
-        }),
+        })
       )}
     </>
   )
 }
-
-export { StationLabels }
