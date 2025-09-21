@@ -53,16 +53,20 @@ export const CurvedLine = ({ id, line, segment, fromStation, toStation, dragOffs
 
   useEffect(() => {
     if (pathRef.current) {
+      pathRef.current.attrs.originalCoords = {
+        from: fromStation,
+        to: toStation,
+        curvature: line.curvatureLines ?? 50
+      }
       pathRef.current.data(recalcPath())
       pathRef.current.getLayer()?.batchDraw()
     }
-  })
+  }, [fromStation, toStation, line, dragOffsetsRef])
 
   return (
     <Path
       id={id}
       ref={pathRef}
-      data={recalcPath()}
       stroke={line.color}
       strokeWidth={4}
       lineCap="round"

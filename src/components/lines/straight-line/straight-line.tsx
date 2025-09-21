@@ -12,7 +12,6 @@ const StraightLine = ({ id, line, segment, fromStation, toStation }) => {
     { x: fromStation.x, y: fromStation.y },
     13
   )
-  console.log(fromStation, toStation )
   return (
     <Line
       id={id}

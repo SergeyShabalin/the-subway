@@ -31,7 +31,7 @@ export const Station = memo(({
     const stage = stageRef.current
     if (!stage) return
 
-    // обновляем метку
+    // Обновляем метку
     const labelNode = stage.findOne(`#label-${station.id}`)
     if (labelNode) {
       labelNode.position({
@@ -41,7 +41,7 @@ export const Station = memo(({
       labelNode.getLayer()?.batchDraw()
     }
 
-    // обновляем линии
+    // Обновляем линии
     const lineNodes = stage.find(node =>
       node.getId()?.startsWith('line-') &&
       node.getId()?.includes(`-${station.id}-`)
@@ -65,6 +65,7 @@ export const Station = memo(({
       } else if (node.getClassName() === 'Path') {
         const orig = node.attrs.originalCoords
         if (!orig) return
+
         const fromStation = orig.from.id === station.id ? { x: station.x + dx, y: station.y + dy } : orig.from
         const toStation = orig.to.id === station.id ? { x: station.x + dx, y: station.y + dy } : orig.to
         const midX = (fromStation.x + toStation.x) / 2
