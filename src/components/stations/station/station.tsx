@@ -31,7 +31,7 @@ export const Station = memo(({
     const stage = stageRef.current
     if (!stage) return
 
-    // Обновляем метку
+    // обновляем метку
     const labelNode = stage.findOne(`#label-${station.id}`)
     if (labelNode) {
       labelNode.position({
@@ -41,11 +41,17 @@ export const Station = memo(({
       labelNode.getLayer()?.batchDraw()
     }
 
-    // Обновляем линии
-    const lineNodes = stage.find(node =>
-      node.getId()?.startsWith('line-') &&
-      node.getId()?.includes(`-${station.id}-`)
-    )
+    // обновляем все линии, к которым привязана станция
+    const lineNodes = stage.find(node => {
+      const id = node.getId?.()
+      if (!id || !id.startsWith('line-')) return false
+      const parts = id.split('-')
+      // ожидаем минимум: ['line', lineId, fromId, toId, ...]
+      if (parts.length < 4) return false
+      const fromId = parseInt(parts[2], 10)
+      const toId   = parseInt(parts[3], 10)
+      return fromId === station.id || toId === station.id
+    })
 
     lineNodes.forEach(node => {
       if (node.getClassName() === 'Line') {
@@ -53,6 +59,7 @@ export const Station = memo(({
         const points = line.points()
         const fromId = parseInt(line.getId().split('-')[2])
         const toId = parseInt(line.getId().split('-')[3])
+
         if (fromId === station.id) {
           points[0] = station.x + dx
           points[1] = station.y + dy
@@ -62,54 +69,80 @@ export const Station = memo(({
           points[3] = station.y + dy
         }
         line.points(points)
+
       } else if (node.getClassName() === 'Path') {
         const orig = node.attrs.originalCoords
         if (!orig) return
 
-        const fromStation = orig.from.id === station.id ? { x: station.x + dx, y: station.y + dy } : orig.from
-        const toStation = orig.to.id === station.id ? { x: station.x + dx, y: station.y + dy } : orig.to
+        const fromStation = orig.from.id === station.id
+          ? { x: station.x + dx, y: station.y + dy }
+          : orig.from
+        const toStation = orig.to.id === station.id
+          ? { x: station.x + dx, y: station.y + dy }
+          : orig.to
+
         const midX = (fromStation.x + toStation.x) / 2
         const midY = (fromStation.y + toStation.y) / 2
         const dxLine = toStation.x - fromStation.x
         const dyLine = toStation.y - fromStation.y
         const length = Math.sqrt(dxLine * dxLine + dyLine * dyLine)
         if (length === 0) return
+
         const perpX = -dyLine / length
         const perpY = dxLine / length
         const control = {
           x: midX + perpX * (orig.curvature ?? 50),
           y: midY + perpY * (orig.curvature ?? 50)
         }
-        const getPointOnCircleTowardsControl = (center: { x: number; y: number }, ctrl: { x: number; y: number }, radius: number) => {
-          const dx = ctrl.x - center.x
-          const dy = ctrl.y - center.y
-          const len = Math.sqrt(dx * dx + dy * dy)
+
+        const getPointOnCircleTowardsControl = (
+          center: { x: number; y: number },
+          ctrl: { x: number; y: number },
+          radius: number
+        ) => {
+          const dxC = ctrl.x - center.x
+          const dyC = ctrl.y - center.y
+          const len = Math.sqrt(dxC * dxC + dyC * dyC)
           if (len === 0) return center
-          return { x: center.x + (dx / len) * radius, y: center.y + (dy / len) * radius }
+          return {
+            x: center.x + (dxC / len) * radius,
+            y: center.y + (dyC / len) * radius
+          }
         }
+
         const start = getPointOnCircleTowardsControl(fromStation, control, 13)
         const end = getPointOnCircleTowardsControl(toStation, control, 13)
         node.data(`M ${start.x},${start.y} Q ${control.x},${control.y} ${end.x},${end.y}`)
       }
+
       node.getLayer()?.batchDraw()
     })
   }, [dragOffsetsRef, stageRef, station])
 
   const handleDragEnd = useCallback((e: any) => {
+    const node = e.target
+    // фактические координаты круга на сцене
+    const newX = node.x()
+    const newY = node.y()
+
     dispatch(updateStationPosition({
       stationId: station.id,
-      x: e.target.x(),
-      y: e.target.y()
+      x: newX,
+      y: newY,
     }))
+
+    // сброс временного смещения
     delete dragOffsetsRef.current[station.id]
+
+    // чтобы konva-нода вернулась в «ноль» относительно Redux-координат
+    node.position({ x: newX, y: newY })
   }, [dispatch, station, dragOffsetsRef])
 
-  const offset = dragOffsetsRef.current[station.id] || { x: 0, y: 0 }
 
   return (
     <Circle
-      x={station.x + offset.x}
-      y={station.y + offset.y}
+      x={station.x + (dragOffsetsRef.current[station.id]?.x || 0)}
+      y={station.y + (dragOffsetsRef.current[station.id]?.y || 0)}
       radius={12}
       fill="transparent"
       stroke={station.color}
