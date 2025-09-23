@@ -24,13 +24,14 @@ export const Station = memo(({
                              }: StationProps) => {
   const dispatch = useDispatch()
   const { metroNetwork } = useMetro()
-  const getLivePos = (stationId: number) => {
 
+  const getLivePos = (stationId: number) => {
     const st = metroNetwork.flatMap(l => l.stations).find(s => s.id === stationId)
     if (!st) return { x: 0, y: 0 }
     const offset = dragOffsetsRef.current[stationId] ?? { x: 0, y: 0 }
     return { x: st.x + offset.x, y: st.y + offset.y }
   }
+
   const handleDragMove = useCallback((e: any) => {
     const dx = e.target.x() - station.x
     const dy = e.target.y() - station.y
@@ -49,15 +50,14 @@ export const Station = memo(({
       labelNode.getLayer()?.batchDraw()
     }
 
-    // обновляем все линии, к которым привязана станция
+    // обновляем линии
     const lineNodes = stage.find(node => {
       const id = node.getId?.()
       if (!id || !id.startsWith('line-')) return false
       const parts = id.split('-')
-      // ожидаем минимум: ['line', lineId, fromId, toId, ...]
       if (parts.length < 4) return false
       const fromId = parseInt(parts[2], 10)
-      const toId   = parseInt(parts[3], 10)
+      const toId = parseInt(parts[3], 10)
       return fromId === station.id || toId === station.id
     })
 
@@ -65,15 +65,15 @@ export const Station = memo(({
       if (node.getClassName() === 'Line') {
         const line = node as any
         const fromId = parseInt(line.getId().split('-')[2])
-        const toId   = parseInt(line.getId().split('-')[3])
+        const toId = parseInt(line.getId().split('-')[3])
         const points = line.points()
-        const r = 14
+        const r = 12
 
         const fromPos = fromId === station.id ? { x: station.x + dx, y: station.y + dy } : getLivePos(fromId)
-        const toPos   = toId   === station.id ? { x: station.x + dx, y: station.y + dy } : getLivePos(toId)
+        const toPos = toId === station.id ? { x: station.x + dx, y: station.y + dy } : getLivePos(toId)
 
         if (fromId === station.id) {
-          // тянем A, вращаем вокруг B
+          // тянем A, конец вращается вокруг B
           const dxLine = fromPos.x - toPos.x
           const dyLine = fromPos.y - toPos.y
           const len = Math.sqrt(dxLine*dxLine + dyLine*dyLine) || 1
@@ -87,7 +87,7 @@ export const Station = memo(({
         }
 
         if (toId === station.id) {
-          // тянем B, вращаем вокруг A
+          // тянем B, начало вращается вокруг A
           const dxLine = toPos.x - fromPos.x
           const dyLine = toPos.y - fromPos.y
           const len = Math.sqrt(dxLine*dxLine + dyLine*dyLine) || 1
@@ -104,6 +104,7 @@ export const Station = memo(({
         line.getLayer()?.batchDraw()
       }
 
+      // Path логика оставлена без изменений
       else if (node.getClassName() === 'Path') {
         const orig = node.attrs.originalCoords
         if (!orig) return
@@ -151,21 +152,17 @@ export const Station = memo(({
 
       node.getLayer()?.batchDraw()
     })
-  }, [dragOffsetsRef, stageRef, station])
+  }, [dragOffsetsRef, stageRef, station, metroNetwork])
 
   const handleDragEnd = useCallback((e: any) => {
-    // сначала сразу сбрасываем offset
     delete dragOffsetsRef.current[station.id]
 
-    // потом отправляем координаты в Redux
     dispatch(updateStationPosition({
       stationId: station.id,
       x: e.target.x(),
       y: e.target.y()
     }))
   }, [dispatch, station, dragOffsetsRef])
-
-
 
   return (
     <Circle
