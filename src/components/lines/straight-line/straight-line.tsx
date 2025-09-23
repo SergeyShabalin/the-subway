@@ -8,8 +8,7 @@ interface StraightLineProps {
   segment: Segment
   fromStation: Station
   toStation: Station
-  dragOffsetsRef?: React.MutableRefObject<Record<number, { x: number; y: number }>>
-  radius?: number
+  radiusStation?: number
 }
 
 export const StraightLine = ({
@@ -18,44 +17,55 @@ export const StraightLine = ({
                                segment,
                                fromStation,
                                toStation,
-                               dragOffsetsRef,
-                               radius = 13
+                               radiusStation = 12
                              }: StraightLineProps) => {
   const lineRef = useRef<any>(null)
 
+  const getPointOnCircleTowardsTarget = (
+    center: { x: number; y: number },
+    target: { x: number; y: number },
+    radiusStation: number
+  ) => {
+    const dx = target.x - center.x
+    const dy = target.y - center.y
+    const len = Math.sqrt(dx * dx + dy * dy)
+
+    let dirX = 1, dirY = 0
+
+    if (len !== 0) {
+      dirX = dx / len
+      dirY = dy / len
+    }
+
+    return {
+      x: center.x + dirX * radiusStation,
+      y: center.y + dirY * radiusStation
+    }
+  }
+
   const recalcLine = () => {
-    const dxFrom = dragOffsetsRef?.current?.[fromStation.id]?.x ?? 0
-    const dyFrom = dragOffsetsRef?.current?.[fromStation.id]?.y ?? 0
-    const dxTo = dragOffsetsRef?.current?.[toStation.id]?.x ?? 0
-    const dyTo = dragOffsetsRef?.current?.[toStation.id]?.y ?? 0
+    const p1 = { x: fromStation.x, y: fromStation.y }
+    const p2 = { x: toStation.x, y: toStation.y }
 
-    const start = { x: fromStation.x + dxFrom, y: fromStation.y + dyFrom }
-    const end = { x: toStation.x + dxTo, y: toStation.y + dyTo }
+    const start = getPointOnCircleTowardsTarget(p1, p2, radiusStation)
+    const end = getPointOnCircleTowardsTarget(p2, p1, radiusStation)
 
-    // вектор линии
-    const dx = end.x - start.x
-    const dy = end.y - start.y
-    const len = Math.sqrt(dx*dx + dy*dy)
-    if (len === 0) return [start.x, start.y, end.x, end.y]
-
-    const ux = dx / len
-    const uy = dy / len
-
-    // смещаем точки от центров станций по радиусу
-    return [
-      start.x + ux * radius,
-      start.y + uy * radius,
-      end.x - ux * radius,
-      end.y - uy * radius
-    ]
+    return [start.x, start.y, end.x, end.y]
   }
 
   useEffect(() => {
-    if (!lineRef.current) return
-    lineRef.current.attrs.originalCoords = { from: fromStation, to: toStation, radius }
-    lineRef.current.points(recalcLine())
-    lineRef.current.getLayer()?.batchDraw()
-  }, [fromStation, toStation, dragOffsetsRef, line, radius])
+    const points = recalcLine()
+    if (lineRef.current) {
+      lineRef.current.points(points)
+      lineRef.current.getLayer()?.batchDraw()
+    }
+  }, [
+    fromStation.x,
+    fromStation.y,
+    toStation.x,
+    toStation.y,
+    radiusStation
+  ])
 
   return (
     <Line
@@ -71,4 +81,3 @@ export const StraightLine = ({
     />
   )
 }
-

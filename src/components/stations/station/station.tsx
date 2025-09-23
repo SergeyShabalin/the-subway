@@ -3,6 +3,7 @@ import { memo, useCallback } from 'react'
 import { useDispatch } from 'react-redux'
 import { updateStationPosition } from '../../../store/slices/metro-slices.ts'
 import type { Stage } from 'konva/lib/Stage'
+import { useMetro } from '../../../store/hooks/use-metro.ts'
 
 interface StationProps {
   station: any
@@ -22,7 +23,14 @@ export const Station = memo(({
                                handleMouseLeave
                              }: StationProps) => {
   const dispatch = useDispatch()
+  const { metroNetwork } = useMetro()
+  const getLivePos = (stationId: number) => {
 
+    const st = metroNetwork.flatMap(l => l.stations).find(s => s.id === stationId)
+    if (!st) return { x: 0, y: 0 }
+    const offset = dragOffsetsRef.current[stationId] ?? { x: 0, y: 0 }
+    return { x: st.x + offset.x, y: st.y + offset.y }
+  }
   const handleDragMove = useCallback((e: any) => {
     const dx = e.target.x() - station.x
     const dy = e.target.y() - station.y
@@ -56,21 +64,47 @@ export const Station = memo(({
     lineNodes.forEach(node => {
       if (node.getClassName() === 'Line') {
         const line = node as any
-        const points = line.points()
         const fromId = parseInt(line.getId().split('-')[2])
-        const toId = parseInt(line.getId().split('-')[3])
+        const toId   = parseInt(line.getId().split('-')[3])
+        const points = line.points()
+        const r = 14
+
+        const fromPos = fromId === station.id ? { x: station.x + dx, y: station.y + dy } : getLivePos(fromId)
+        const toPos   = toId   === station.id ? { x: station.x + dx, y: station.y + dy } : getLivePos(toId)
 
         if (fromId === station.id) {
-          points[0] = station.x + dx
-          points[1] = station.y + dy
-        }
-        if (toId === station.id) {
-          points[2] = station.x + dx
-          points[3] = station.y + dy
-        }
-        line.points(points)
+          // тянем A, вращаем вокруг B
+          const dxLine = fromPos.x - toPos.x
+          const dyLine = fromPos.y - toPos.y
+          const len = Math.sqrt(dxLine*dxLine + dyLine*dyLine) || 1
+          const unitX = dxLine / len
+          const unitY = dyLine / len
 
-      } else if (node.getClassName() === 'Path') {
+          points[0] = fromPos.x
+          points[1] = fromPos.y
+          points[2] = toPos.x + unitX * r
+          points[3] = toPos.y + unitY * r
+        }
+
+        if (toId === station.id) {
+          // тянем B, вращаем вокруг A
+          const dxLine = toPos.x - fromPos.x
+          const dyLine = toPos.y - fromPos.y
+          const len = Math.sqrt(dxLine*dxLine + dyLine*dyLine) || 1
+          const unitX = dxLine / len
+          const unitY = dyLine / len
+
+          points[0] = fromPos.x + unitX * r
+          points[1] = fromPos.y + unitY * r
+          points[2] = toPos.x
+          points[3] = toPos.y
+        }
+
+        line.points(points)
+        line.getLayer()?.batchDraw()
+      }
+
+      else if (node.getClassName() === 'Path') {
         const orig = node.attrs.originalCoords
         if (!orig) return
 

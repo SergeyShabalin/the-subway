@@ -1,130 +1,130 @@
-import { Fragment, useState } from 'react'
-import { Circle, Layer, Stage, Text } from 'react-konva'
-import Konva from 'konva'
-
-const Lines = () => {
-
-  const [lines, setLines] = useState<MetroLine[]>([
-    {
-      id: 1,
-      color: '#90a05f',
-      name: 'Арбатско-Покровская',
-      stations: [
-        { id: 1, x: 200, y: 300, color: '#90a05f', label: 'Парк победы', labelOffset: { x: 0, y: -60 } },
-        { id: 2, x: 600, y: 300, color: '#90a05f', label: 'Кутузовская', labelOffset: { x: 0, y: -60 } },
-      ],
-      segments: [
-        { fromStationId: 1, toStationId: 2, timeMinutes: 5 },
-      ],
-      isCircular: false,
-      renderStyle: 'linear',
-    },
-    {
-      id: 2,
-      color: '#c6590c',
-      name: 'Калининская',
-      stations: [
-        { id: 3, x: 300, y: 600, color: '#c6590c', label: 'Новокосино', labelOffset: { x: 0, y: -60 } },
-        { id: 4, x: 700, y: 600, color: '#c6590c', label: 'Ломоносовская', labelOffset: { x: 0, y: -60 } },
-      ],
-      segments: [
-        { fromStationId: 3, toStationId: 4, timeMinutes: 8 },
-      ],
-      isCircular: false,
-      renderStyle: 'linear',
-    },
-  ]);
-
-  return (
-    <Stage
-      width={1600}
-      height={790}
-      onWheel={handleWheel}
-      // ref={stageRef}
-      // onClick={handleStageClick}
-      // onMouseDown={handleStageMouseDown}
-      // onMouseMove={handleStageMouseMove}
-      // onMouseUp={handleStageMouseUp}
-      // onMouseLeave={handleStageMouseUp}
-    >
-              <Layer x={position.x} y={position.y} scaleX={scale} scaleY={scale}>
-                {lines.map(renderLine)}
-      {/*          {transferLines.map(renderTransferLine)}*/}
-      {/*          {lines.flatMap(line => line.segments.map((seg, i) => renderSegmentLabel(seg, i, line.id)))}*/}
-      {/*          {transferLines.map((transfer, i) => renderTransferLabel(transfer, i))}*/}
-      {/*          {lines.flatMap((line) =>*/}
-      {/*            line.stations.map((station) => {*/}
-      {/*              const isSelectedLine = selectedLineId === line.id;*/}
-      {/*              // 👇 Проверяем, входит ли станция в подсвеченный маршрут*/}
-      {/*              const isOnPath = highlightedPath.stations.has(station.id);*/}
-      {/*              return (*/}
-      {/*                <Fragment key={station.id}>*/}
-      {/*                  <Circle*/}
-      {/*                    x={station.x}*/}
-      {/*                    y={station.y}*/}
-      {/*                    radius={32}*/}
-      {/*                    fill="#2b2d30"*/}
-      {/*                    stroke={isOnPath ? '#ffff00' : station.color}*/}
-      {/*                    strokeWidth={isOnPath ? 8 : 6}*/}
-      {/*                    strokeScaleEnabled={false}*/}
-      {/*                    filters={isSelectedLine ? [Konva.Filters.Blur] : undefined}*/}
-      {/*                    blurRadius={isSelectedLine ? 5 : 0}*/}
-      {/*                    draggable={activeMode !== 'free'}*/}
-      {/*                    onMouseEnter={handleMouseEnter}*/}
-      {/*                    onMouseLeave={handleMouseLeave}*/}
-      {/*                    onDragStart={handleDragStart}*/}
-      {/*                    onDragMove={(e) => handleDragMove(e, station.id)}*/}
-      {/*                    onDragEnd={(e) => handleDragEnd(e, station.id)}*/}
-      {/*                    onClick={(e) => handleStationClick(station.id, e)}*/}
-      {/*                    onContextMenu={(e) => {*/}
-      {/*                      e.evt.preventDefault();*/}
-      {/*                      const menu = window.confirm(*/}
-      {/*                        `Станция: ${station.label}*/}
-      {/*` +*/}
-      {/*                        `Выберите действие:*/}
-      {/*` +*/}
-      {/*                        `OK - Удалить станцию*/}
-      {/*` +*/}
-      {/*                        `Отмена - Настроить подпись`*/}
-      {/*                      );*/}
-      {/*                      if (menu) {*/}
-      {/*                        setConfirmDelete({ type: 'station', id: station.id });*/}
-      {/*                      } else {*/}
-      {/*                        setLabelPositionStation(station);*/}
-      {/*                        setLabelOffsetX(station.labelOffset.x);*/}
-      {/*                        setLabelOffsetY(station.labelOffset.y);*/}
-      {/*                        setIsLabelPositionModalOpen(true);*/}
-      {/*                      }*/}
-      {/*                    }}*/}
-      {/*                  />*/}
-      {/*                  <Text*/}
-      {/*                    x={station.x + station.labelOffset.x}*/}
-      {/*                    y={station.y + station.labelOffset.y}*/}
-      {/*                    text={station.label}*/}
-      {/*                    fontSize={33 / 2 / scale}*/}
-      {/*                    fontFamily="Arial"*/}
-      {/*                    fill="#accfc6"*/}
-      {/*                    align="center"*/}
-      {/*                    width={300 / 2 / scale}*/}
-      {/*                    onDblClick={() => {*/}
-      {/*                      setEditingStation(station);*/}
-      {/*                      setEditStationName(station.label);*/}
-      {/*                      setIsEditStationModalOpen(true);*/}
-      {/*                    }}*/}
-      {/*                  />*/}
-      {/*                </Fragment>*/}
-      {/*              );*/}
-      {/*            })*/}
-      {/*          )}*/}
-              </Layer>
-    </Stage>
-  )
-}
-
-export { Lines }
-
-
-
+// import { Fragment, useState } from 'react'
+// import { Circle, Layer, Stage, Text } from 'react-konva'
+// import Konva from 'konva'
+//
+// const Lines = () => {
+//
+//   const [lines, setLines] = useState<MetroLine[]>([
+//     {
+//       id: 1,
+//       color: '#90a05f',
+//       name: 'Арбатско-Покровская',
+//       stations: [
+//         { id: 1, x: 200, y: 300, color: '#90a05f', label: 'Парк победы', labelOffset: { x: 0, y: -60 } },
+//         { id: 2, x: 600, y: 300, color: '#90a05f', label: 'Кутузовская', labelOffset: { x: 0, y: -60 } },
+//       ],
+//       segments: [
+//         { fromStationId: 1, toStationId: 2, timeMinutes: 5 },
+//       ],
+//       isCircular: false,
+//       renderStyle: 'linear',
+//     },
+//     {
+//       id: 2,
+//       color: '#c6590c',
+//       name: 'Калининская',
+//       stations: [
+//         { id: 3, x: 300, y: 600, color: '#c6590c', label: 'Новокосино', labelOffset: { x: 0, y: -60 } },
+//         { id: 4, x: 700, y: 600, color: '#c6590c', label: 'Ломоносовская', labelOffset: { x: 0, y: -60 } },
+//       ],
+//       segments: [
+//         { fromStationId: 3, toStationId: 4, timeMinutes: 8 },
+//       ],
+//       isCircular: false,
+//       renderStyle: 'linear',
+//     },
+//   ]);
+//
+//   return (
+//     <Stage
+//       width={1600}
+//       height={790}
+//       onWheel={handleWheel}
+//       // ref={stageRef}
+//       // onClick={handleStageClick}
+//       // onMouseDown={handleStageMouseDown}
+//       // onMouseMove={handleStageMouseMove}
+//       // onMouseUp={handleStageMouseUp}
+//       // onMouseLeave={handleStageMouseUp}
+//     >
+//               <Layer x={position.x} y={position.y} scaleX={scale} scaleY={scale}>
+//                 {lines.map(renderLine)}
+//       {/*          {transferLines.map(renderTransferLine)}*/}
+//       {/*          {lines.flatMap(line => line.segments.map((seg, i) => renderSegmentLabel(seg, i, line.id)))}*/}
+//       {/*          {transferLines.map((transfer, i) => renderTransferLabel(transfer, i))}*/}
+//       {/*          {lines.flatMap((line) =>*/}
+//       {/*            line.stations.map((station) => {*/}
+//       {/*              const isSelectedLine = selectedLineId === line.id;*/}
+//       {/*              // 👇 Проверяем, входит ли станция в подсвеченный маршрут*/}
+//       {/*              const isOnPath = highlightedPath.stations.has(station.id);*/}
+//       {/*              return (*/}
+//       {/*                <Fragment key={station.id}>*/}
+//       {/*                  <Circle*/}
+//       {/*                    x={station.x}*/}
+//       {/*                    y={station.y}*/}
+//       {/*                    radius={32}*/}
+//       {/*                    fill="#2b2d30"*/}
+//       {/*                    stroke={isOnPath ? '#ffff00' : station.color}*/}
+//       {/*                    strokeWidth={isOnPath ? 8 : 6}*/}
+//       {/*                    strokeScaleEnabled={false}*/}
+//       {/*                    filters={isSelectedLine ? [Konva.Filters.Blur] : undefined}*/}
+//       {/*                    blurRadius={isSelectedLine ? 5 : 0}*/}
+//       {/*                    draggable={activeMode !== 'free'}*/}
+//       {/*                    onMouseEnter={handleMouseEnter}*/}
+//       {/*                    onMouseLeave={handleMouseLeave}*/}
+//       {/*                    onDragStart={handleDragStart}*/}
+//       {/*                    onDragMove={(e) => handleDragMove(e, station.id)}*/}
+//       {/*                    onDragEnd={(e) => handleDragEnd(e, station.id)}*/}
+//       {/*                    onClick={(e) => handleStationClick(station.id, e)}*/}
+//       {/*                    onContextMenu={(e) => {*/}
+//       {/*                      e.evt.preventDefault();*/}
+//       {/*                      const menu = window.confirm(*/}
+//       {/*                        `Станция: ${station.label}*/}
+//       {/*` +*/}
+//       {/*                        `Выберите действие:*/}
+//       {/*` +*/}
+//       {/*                        `OK - Удалить станцию*/}
+//       {/*` +*/}
+//       {/*                        `Отмена - Настроить подпись`*/}
+//       {/*                      );*/}
+//       {/*                      if (menu) {*/}
+//       {/*                        setConfirmDelete({ type: 'station', id: station.id });*/}
+//       {/*                      } else {*/}
+//       {/*                        setLabelPositionStation(station);*/}
+//       {/*                        setLabelOffsetX(station.labelOffset.x);*/}
+//       {/*                        setLabelOffsetY(station.labelOffset.y);*/}
+//       {/*                        setIsLabelPositionModalOpen(true);*/}
+//       {/*                      }*/}
+//       {/*                    }}*/}
+//       {/*                  />*/}
+//       {/*                  <Text*/}
+//       {/*                    x={station.x + station.labelOffset.x}*/}
+//       {/*                    y={station.y + station.labelOffset.y}*/}
+//       {/*                    text={station.label}*/}
+//       {/*                    fontSize={33 / 2 / scale}*/}
+//       {/*                    fontFamily="Arial"*/}
+//       {/*                    fill="#accfc6"*/}
+//       {/*                    align="center"*/}
+//       {/*                    width={300 / 2 / scale}*/}
+//       {/*                    onDblClick={() => {*/}
+//       {/*                      setEditingStation(station);*/}
+//       {/*                      setEditStationName(station.label);*/}
+//       {/*                      setIsEditStationModalOpen(true);*/}
+//       {/*                    }}*/}
+//       {/*                  />*/}
+//       {/*                </Fragment>*/}
+//       {/*              );*/}
+//       {/*            })*/}
+//       {/*          )}*/}
+//               </Layer>
+//     </Stage>
+//   )
+// }
+//
+// export { Lines }
+//
+//
+//
 
 
 
@@ -2501,7 +2501,7 @@ const FlowExample = () => {
       <Stage
         width={1600}
         height={790}
-        onWheel={handleWheel}
+
         ref={stageRef}
         onClick={handleStageClick}
         onMouseDown={handleStageMouseDown}
@@ -2525,7 +2525,7 @@ const FlowExample = () => {
                     x={station.x}
                     y={station.y}
                     radius={32}
-                    fill="#2b2d30"
+                    fill="transparent"
                     stroke={isOnPath ? '#ffff00' : station.color}
                     strokeWidth={isOnPath ? 8 : 6}
                     strokeScaleEnabled={false}
