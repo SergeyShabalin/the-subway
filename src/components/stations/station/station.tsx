@@ -1,4 +1,4 @@
-import { Circle } from 'react-konva'
+import { Circle, Line } from 'react-konva'
 import { memo, useCallback } from 'react'
 import { useDispatch } from 'react-redux'
 import { updateStationPosition } from '../../../store/slices/metro-slices.ts'
@@ -40,7 +40,7 @@ export const Station = memo(({
     const stage = stageRef.current
     if (!stage) return
 
-    // обновляем метку
+    // Обновляем метку
     const labelNode = stage.findOne(`#label-${station.id}`)
     if (labelNode) {
       labelNode.position({
@@ -50,61 +50,58 @@ export const Station = memo(({
       labelNode.getLayer()?.batchDraw()
     }
 
-    // обновляем линии
+    // Обновляем все линии, к которым привязана станция
     const lineNodes = stage.find(node => {
       const id = node.getId?.()
       if (!id || !id.startsWith('line-')) return false
       const parts = id.split('-')
       if (parts.length < 4) return false
-      const fromId = parseInt(parts[2], 10)
-      const toId = parseInt(parts[3], 10)
+      const fromId = parseInt(parts[2], -0)
+      const toId   = parseInt(parts[3], 10)
       return fromId === station.id || toId === station.id
     })
 
     lineNodes.forEach(node => {
       if (node.getClassName() === 'Line') {
         const line = node as any
-        const fromId = parseInt(line.getId().split('-')[2])
-        const toId = parseInt(line.getId().split('-')[3])
+        const parts = line.getId().split('-')
+        const fromId = parseInt(parts[2], 10)
+        const toId   = parseInt(parts[3], 10)
+        const variant = parts[4] // 'a', 'b' или undefined
         const points = line.points()
         const r = 12
+        const offset = 4
+        const actualOffset = variant === 'a' ? offset : variant === 'b' ? -offset : 0
 
         const fromPos = fromId === station.id ? { x: station.x + dx, y: station.y + dy } : getLivePos(fromId)
-        const toPos = toId === station.id ? { x: station.x + dx, y: station.y + dy } : getLivePos(toId)
+        const toPos   = toId   === station.id ? { x: station.x + dx, y: station.y + dy } : getLivePos(toId)
+
+        const dxLine = toPos.x - fromPos.x
+        const dyLine = toPos.y - fromPos.y
+        const len = Math.sqrt(dxLine*dxLine + dyLine*dyLine) || 1
+        const nx = dxLine / len
+        const ny = dyLine / len
+        const px = -ny
+        const py = nx
 
         if (fromId === station.id) {
-          // тянем A, конец вращается вокруг B
-          const dxLine = fromPos.x - toPos.x
-          const dyLine = fromPos.y - toPos.y
-          const len = Math.sqrt(dxLine*dxLine + dyLine*dyLine) || 1
-          const unitX = dxLine / len
-          const unitY = dyLine / len
-
-          points[0] = fromPos.x
-          points[1] = fromPos.y
-          points[2] = toPos.x + unitX * r
-          points[3] = toPos.y + unitY * r
+          points[0] = fromPos.x + px * actualOffset
+          points[1] = fromPos.y + py * actualOffset
+          points[2] = toPos.x + nx * r + px * actualOffset
+          points[3] = toPos.y + ny * r + py * actualOffset
         }
 
         if (toId === station.id) {
-          // тянем B, начало вращается вокруг A
-          const dxLine = toPos.x - fromPos.x
-          const dyLine = toPos.y - fromPos.y
-          const len = Math.sqrt(dxLine*dxLine + dyLine*dyLine) || 1
-          const unitX = dxLine / len
-          const unitY = dyLine / len
-
-          points[0] = fromPos.x + unitX * r
-          points[1] = fromPos.y + unitY * r
-          points[2] = toPos.x
-          points[3] = toPos.y
+          points[0] = fromPos.x + nx * r + px * actualOffset
+          points[1] = fromPos.y + ny * r + py * actualOffset
+          points[2] = toPos.x + px * actualOffset
+          points[3] = toPos.y + py * actualOffset
         }
 
         line.points(points)
         line.getLayer()?.batchDraw()
       }
 
-      // Path логика оставлена без изменений
       else if (node.getClassName() === 'Path') {
         const orig = node.attrs.originalCoords
         if (!orig) return
@@ -156,7 +153,6 @@ export const Station = memo(({
 
   const handleDragEnd = useCallback((e: any) => {
     delete dragOffsetsRef.current[station.id]
-
     dispatch(updateStationPosition({
       stationId: station.id,
       x: e.target.x(),
