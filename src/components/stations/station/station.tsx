@@ -32,9 +32,36 @@ export const Station = memo(({
     return { x: st.x + offset.x, y: st.y + offset.y }
   }
 
+  const getPointOnCircleEdge = (
+    fromPos: { x: number; y: number },
+    toPos: { x: number; y: number },
+    radius: number
+  ) => {
+    const dx = toPos.x - fromPos.x
+    const dy = toPos.y - fromPos.y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+
+    if (distance === 0) return fromPos
+
+    const nx = dx / distance
+    const ny = dy / distance
+
+    return {
+      x: fromPos.x + nx * radius,
+      y: fromPos.y + ny * radius
+    }
+  }
+
   const handleDragMove = useCallback((e: any) => {
-    const dx = e.target.x() - station.x
-    const dy = e.target.y() - station.y
+    const node = e.target;
+    const newX = node.x();
+    const newY = node.y();
+
+    // Принудительно обновляем позицию для мгновенного отклика
+    node.setPosition({ x: newX, y: newY });
+
+    const dx = newX - station.x
+    const dy = newY - station.y
     dragOffsetsRef.current[station.id] = { x: dx, y: dy }
 
     const stage = stageRef.current
@@ -43,11 +70,10 @@ export const Station = memo(({
     // Обновляем метку
     const labelNode = stage.findOne(`#label-${station.id}`)
     if (labelNode) {
-      labelNode.position({
-        x: station.x + dx + (station.labelOffset?.x || 0),
-        y: station.y + dy + (station.labelOffset?.y || 0)
+      labelNode.setPosition({
+        x: newX + (station.labelOffset?.x || 0),
+        y: newY + (station.labelOffset?.y || 0)
       })
-      labelNode.getLayer()?.batchDraw()
     }
 
     // Обновляем все линии, к которым привязана станция
@@ -56,7 +82,7 @@ export const Station = memo(({
       if (!id || !id.startsWith('line-')) return false
       const parts = id.split('-')
       if (parts.length < 4) return false
-      const fromId = parseInt(parts[2], -0)
+      const fromId = parseInt(parts[2], 10)
       const toId   = parseInt(parts[3], 10)
       return fromId === station.id || toId === station.id
     })
@@ -67,50 +93,48 @@ export const Station = memo(({
         const parts = line.getId().split('-')
         const fromId = parseInt(parts[2], 10)
         const toId   = parseInt(parts[3], 10)
-        const variant = parts[4] // 'a', 'b' или undefined
+        const variant = parts[4]
         const points = line.points()
-        const r = 12
+        const stationRadius = 12
         const offset = 4
         const actualOffset = variant === 'a' ? offset : variant === 'b' ? -offset : 0
 
-        const fromPos = fromId === station.id ? { x: station.x + dx, y: station.y + dy } : getLivePos(fromId)
-        const toPos   = toId   === station.id ? { x: station.x + dx, y: station.y + dy } : getLivePos(toId)
+        const fromPos = fromId === station.id ?
+          { x: newX, y: newY } : getLivePos(fromId)
+        const toPos = toId === station.id ?
+          { x: newX, y: newY } : getLivePos(toId)
 
         const dxLine = toPos.x - fromPos.x
         const dyLine = toPos.y - fromPos.y
-        const len = Math.sqrt(dxLine*dxLine + dyLine*dyLine) || 1
+        const len = Math.sqrt(dxLine * dxLine + dyLine * dyLine) || 1
         const nx = dxLine / len
         const ny = dyLine / len
+
         const px = -ny
         const py = nx
 
-        if (fromId === station.id) {
-          points[0] = fromPos.x + px * actualOffset
-          points[1] = fromPos.y + py * actualOffset
-          points[2] = toPos.x + nx * r + px * actualOffset
-          points[3] = toPos.y + ny * r + py * actualOffset
-        }
+        const fromEdge = getPointOnCircleEdge(fromPos, toPos, stationRadius)
+        const toEdge = getPointOnCircleEdge(toPos, fromPos, stationRadius)
 
-        if (toId === station.id) {
-          points[0] = fromPos.x + nx * r + px * actualOffset
-          points[1] = fromPos.y + ny * r + py * actualOffset
-          points[2] = toPos.x + px * actualOffset
-          points[3] = toPos.y + py * actualOffset
-        }
+        const fromOffset = { x: px * actualOffset, y: py * actualOffset }
+        const toOffset = { x: px * actualOffset, y: py * actualOffset }
+
+        points[0] = fromEdge.x + fromOffset.x
+        points[1] = fromEdge.y + fromOffset.y
+        points[2] = toEdge.x + toOffset.x
+        points[3] = toEdge.y + toOffset.y
 
         line.points(points)
-        line.getLayer()?.batchDraw()
       }
-
       else if (node.getClassName() === 'Path') {
         const orig = node.attrs.originalCoords
         if (!orig) return
 
         const fromStation = orig.from.id === station.id
-          ? { x: station.x + dx, y: station.y + dy }
+          ? { x: newX, y: newY }
           : orig.from
         const toStation = orig.to.id === station.id
-          ? { x: station.x + dx, y: station.y + dy }
+          ? { x: newX, y: newY }
           : orig.to
 
         const midX = (fromStation.x + toStation.x) / 2
@@ -127,43 +151,34 @@ export const Station = memo(({
           y: midY + perpY * (orig.curvature ?? 50)
         }
 
-        const getPointOnCircleTowardsControl = (
-          center: { x: number; y: number },
-          ctrl: { x: number; y: number },
-          radius: number
-        ) => {
-          const dxC = ctrl.x - center.x
-          const dyC = ctrl.y - center.y
-          const len = Math.sqrt(dxC * dxC + dyC * dyC)
-          if (len === 0) return center
-          return {
-            x: center.x + (dxC / len) * radius,
-            y: center.y + (dyC / len) * radius
-          }
-        }
+        const start = getPointOnCircleEdge(fromStation, control, 12)
+        const end = getPointOnCircleEdge(toStation, control, 12)
 
-        const start = getPointOnCircleTowardsControl(fromStation, control, 13)
-        const end = getPointOnCircleTowardsControl(toStation, control, 13)
         node.data(`M ${start.x},${start.y} Q ${control.x},${control.y} ${end.x},${end.y}`)
       }
-
-      node.getLayer()?.batchDraw()
     })
+
+    // Принудительно обновляем слой
+    node.getLayer()?.batchDraw()
   }, [dragOffsetsRef, stageRef, station, metroNetwork])
 
   const handleDragEnd = useCallback((e: any) => {
+    const node = e.target;
     delete dragOffsetsRef.current[station.id]
+
     dispatch(updateStationPosition({
       stationId: station.id,
-      x: e.target.x(),
-      y: e.target.y()
+      x: node.x(),
+      y: node.y()
     }))
   }, [dispatch, station, dragOffsetsRef])
 
+  const currentOffset = dragOffsetsRef.current[station.id] || { x: 0, y: 0 }
+
   return (
     <Circle
-      x={station.x + (dragOffsetsRef.current[station.id]?.x || 0)}
-      y={station.y + (dragOffsetsRef.current[station.id]?.y || 0)}
+      x={station.x + currentOffset.x}
+      y={station.y + currentOffset.y}
       radius={12}
       fill="transparent"
       stroke={station.color}
@@ -176,6 +191,10 @@ export const Station = memo(({
       onMouseEnter={() => handleMouseEnter(station.id)}
       onMouseLeave={handleMouseLeave}
       style={{ cursor: hoveredStationId === station.id ? 'grab' : 'default' }}
+      // Важные оптимизации для плавности перетаскивания
+      perfectDrawEnabled={false}
+      listening={true}
+      shadowEnabled={false} // Отключаем тень при перетаскивании для производительности
     />
   )
 })

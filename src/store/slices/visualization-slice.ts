@@ -4,7 +4,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import type { VisualizationSettings } from '../types/visualization';
 
 const initialState: VisualizationSettings = {
-  curvatureLines: 150,
+  curvatureLines: 17,
   lineWidth: 4,
   stationRadius: 12,
   showLabels: true,

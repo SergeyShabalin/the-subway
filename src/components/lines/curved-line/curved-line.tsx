@@ -58,7 +58,7 @@ export const CurvedLine = ({ id, line, segment, fromStation, toStation, dragOffs
         to: toStation,
         curvature: line.curvatureLines ?? 50
       }
-
+      console.log()
       pathRef.current.data(recalcPath())
       pathRef.current.getLayer()?.batchDraw()
     }

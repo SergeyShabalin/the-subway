@@ -1,12 +1,8 @@
 import { Sidebar } from '../ui'
-
 import { useVisualization } from '../../store/hooks/use-visualization.ts'
 import { useMetro } from '../../store/hooks/use-metro.ts'
 
-
 const ControlPanel = () => {
-
-
   const {
     circleRadius,
     actions: visActions,
@@ -38,7 +34,7 @@ const ControlPanel = () => {
     const id = e.target.value ? parseInt(e.target.value) : null
     metroActions.setActiveLineId(id) // 👈 ТЕПЕРЬ МЕНЯЕМ activeLineId В REDUX!
   }
-  console.log('circleRadius', circleRadius)
+
   return (
     <div>
       <Sidebar>
