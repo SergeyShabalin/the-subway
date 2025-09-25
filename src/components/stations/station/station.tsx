@@ -1,5 +1,5 @@
 import { Circle, Line } from 'react-konva'
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { updateStationPosition } from '../../../store/slices/metro-slices.ts'
 import type { Stage } from 'konva/lib/Stage'
@@ -24,6 +24,7 @@ export const Station = memo(({
                              }: StationProps) => {
   const dispatch = useDispatch()
   const { metroNetwork } = useMetro()
+  const [isHovered, setIsHovered] = useState(false)
 
   const getLivePos = (stationId: number) => {
     const st = metroNetwork.flatMap(l => l.stations).find(s => s.id === stationId)
@@ -52,12 +53,30 @@ export const Station = memo(({
     }
   }
 
+  const updateCursor = useCallback((cursorType: string) => {
+    const stage = stageRef.current
+    if (stage && stage.container()) {
+      stage.container().style.cursor = cursorType
+    }
+  }, [stageRef])
+
+  const handleMouseEnterStation = useCallback((e: any) => {
+    setIsHovered(true)
+    handleMouseEnter(station.id)
+    updateCursor('grab')
+  }, [handleMouseEnter, station.id, updateCursor])
+
+  const handleMouseLeaveStation = useCallback((e: any) => {
+    setIsHovered(false)
+    handleMouseLeave()
+    updateCursor('default')
+  }, [handleMouseLeave, updateCursor])
+
   const handleDragMove = useCallback((e: any) => {
     const node = e.target;
     const newX = node.x();
     const newY = node.y();
 
-    // Принудительно обновляем позицию для мгновенного отклика
     node.setPosition({ x: newX, y: newY });
 
     const dx = newX - station.x
@@ -67,7 +86,6 @@ export const Station = memo(({
     const stage = stageRef.current
     if (!stage) return
 
-    // Обновляем метку
     const labelNode = stage.findOne(`#label-${station.id}`)
     if (labelNode) {
       labelNode.setPosition({
@@ -76,7 +94,6 @@ export const Station = memo(({
       })
     }
 
-    // Обновляем все линии, к которым привязана станция
     const lineNodes = stage.find(node => {
       const id = node.getId?.()
       if (!id || !id.startsWith('line-')) return false
@@ -95,7 +112,7 @@ export const Station = memo(({
         const toId   = parseInt(parts[3], 10)
         const variant = parts[4]
         const points = line.points()
-        const stationRadius = 12
+        const stationRadius = 15
         const offset = 4
         const actualOffset = variant === 'a' ? offset : variant === 'b' ? -offset : 0
 
@@ -151,50 +168,68 @@ export const Station = memo(({
           y: midY + perpY * (orig.curvature ?? 50)
         }
 
-        const start = getPointOnCircleEdge(fromStation, control, 12)
-        const end = getPointOnCircleEdge(toStation, control, 12)
+        const start = getPointOnCircleEdge(fromStation, control, 14)
+        const end = getPointOnCircleEdge(toStation, control, 14)
 
         node.data(`M ${start.x},${start.y} Q ${control.x},${control.y} ${end.x},${end.y}`)
       }
     })
 
-    // Принудительно обновляем слой
     node.getLayer()?.batchDraw()
   }, [dragOffsetsRef, stageRef, station, metroNetwork])
+
+  const handleDragStart = useCallback((e: any) => {
+    updateCursor('grabbing')
+  }, [updateCursor])
 
   const handleDragEnd = useCallback((e: any) => {
     const node = e.target;
     delete dragOffsetsRef.current[station.id]
+
+    // Возвращаем курсор grab, если мышь все еще над станцией
+    if (isHovered) {
+      updateCursor('grab')
+    } else {
+      updateCursor('default')
+    }
 
     dispatch(updateStationPosition({
       stationId: station.id,
       x: node.x(),
       y: node.y()
     }))
-  }, [dispatch, station, dragOffsetsRef])
+  }, [dispatch, station, dragOffsetsRef, isHovered, updateCursor])
 
   const currentOffset = dragOffsetsRef.current[station.id] || { x: 0, y: 0 }
+
+  const getStationStyles = () => {
+    return {
+      fill: isHovered ? `${station.color}20` : 'transparent',
+      stroke: station.color,
+      strokeWidth: isHovered ? 3 : 2,
+      shadowColor: isHovered ? station.color : 'rgba(0,0,0,0.2)',
+      shadowBlur: isHovered ? 10 : 5,
+      shadowOpacity: isHovered ? 0.6 : 0.4,
+    }
+  }
 
   return (
     <Circle
       x={station.x + currentOffset.x}
       y={station.y + currentOffset.y}
-      radius={12}
-      fill="transparent"
-      stroke={station.color}
-      strokeWidth={2}
+      radius={14} // Увеличим радиус для лучшего попадания
+      {...getStationStyles()}
       draggable
-      shadowColor="rgba(0,0,0,0.2)"
-      shadowBlur={5}
+      onMouseEnter={handleMouseEnterStation}
+      onMouseLeave={handleMouseLeaveStation}
+      onDragStart={handleDragStart}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
-      onMouseEnter={() => handleMouseEnter(station.id)}
-      onMouseLeave={handleMouseLeave}
-      style={{ cursor: hoveredStationId === station.id ? 'grab' : 'default' }}
-      // Важные оптимизации для плавности перетаскивания
       perfectDrawEnabled={false}
       listening={true}
-      shadowEnabled={false} // Отключаем тень при перетаскивании для производительности
+      shadowEnabled={true}
+      // Увеличиваем хит-область для лучшего взаимодействия
+      hitStrokeWidth={20}
     />
   )
 })

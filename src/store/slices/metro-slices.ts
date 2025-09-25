@@ -1,14 +1,7 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice } from '@reduxjs/toolkit'
+import type { PayloadAction } from '@reduxjs/toolkit'
 import { metroNetwork } from '../data/metro-network.ts'
-
-export type Station = {
-  id: number
-  x: number
-  y: number
-  color: string
-  label: string
-  labelOffset: { x: number; y: number }
-}
+import type { Station } from '../../components/stations/station/types.ts'
 
 export type Segment = {
   fromStationId: number
@@ -46,18 +39,18 @@ const metroSlice = createSlice({
   reducers: {
     updateStationPosition: (
       state,
-      action: PayloadAction<{ stationId: number; x: number; y: number }>
+      action: PayloadAction<{ stationId: number; x: number; y: number }>,
     ) => {
       const { stationId, x, y } = action.payload
 
       // Находим линию и станцию
-      const lineIndex = state.metroNetwork.findIndex(line =>
-        line.stations.some(st => st.id === stationId)
+      const lineIndex = state.metroNetwork.findIndex((line) =>
+        line.stations.some((st) => st.id === stationId),
       )
       if (lineIndex === -1) return
 
       const line = state.metroNetwork[lineIndex]
-      const stationIndex = line.stations.findIndex(s => s.id === stationId)
+      const stationIndex = line.stations.findIndex((s) => s.id === stationId)
       if (stationIndex === -1) return
 
       // Создаём полностью новый объект станции
@@ -94,20 +87,20 @@ const metroSlice = createSlice({
 
     updateLineCurvature: (
       state,
-      action: PayloadAction<{ lineId: number; curvature: number }>
+      action: PayloadAction<{ lineId: number; curvature: number }>,
     ) => {
       const { lineId, curvature } = action.payload
-      state.metroNetwork = state.metroNetwork.map(line =>
-        line.id === lineId ? { ...line, curvatureLines: curvature } : line
+      state.metroNetwork = state.metroNetwork.map((line) =>
+        line.id === lineId ? { ...line, curvatureLines: curvature } : line,
       )
     },
 
     alignLineToCircle: (
       state,
-      action: PayloadAction<{ lineId: number; radius: number }>
+      action: PayloadAction<{ lineId: number; radius: number }>,
     ) => {
       const { lineId, radius } = action.payload
-      state.metroNetwork = state.metroNetwork.map(line => {
+      state.metroNetwork = state.metroNetwork.map((line) => {
         if (line.id !== lineId || !line.locking) return line
         const n = line.stations.length
         if (n < 2) return line
@@ -116,7 +109,7 @@ const metroSlice = createSlice({
         const centerY = line.stations.reduce((sum, s) => sum + s.y, 0) / n
         const firstAngle = Math.atan2(
           line.stations[0].y - centerY,
-          line.stations[0].x - centerX
+          line.stations[0].x - centerX,
         )
 
         const newStations = line.stations.map((s, i) => ({
@@ -139,4 +132,3 @@ export const {
 } = metroSlice.actions
 
 export default metroSlice.reducer
-

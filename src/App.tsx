@@ -1,9 +1,10 @@
 import './global.css'
 import { ControlPanel, MainField } from './components'
-import { useState } from 'react'
+import {   useRef, useState } from 'react'
 
 const App = () => {
   const [freeMoving, setFreeMoving] = useState<boolean>(false)
+  const curvatureRef = useRef<Record<number, number>>({})
 
   return (
     <div className="content">
@@ -16,8 +17,8 @@ const App = () => {
         />
         Режим свободного перемещения
       </label>
-      <ControlPanel />
-      <MainField freeMooving={freeMoving} />
+      <ControlPanel curvatureRef={curvatureRef}/>
+      <MainField freeMooving={freeMoving} curvatureRef={curvatureRef} />
     </div>
   )
 }

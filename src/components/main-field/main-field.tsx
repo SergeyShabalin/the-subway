@@ -6,10 +6,10 @@ import { Stations } from '../stations/stations.tsx'
 import { Lines } from '../lines/lines.tsx'
 import { StationLabels } from '../station-labels/station-labels.tsx'
 
-const MainField = ({ freeMooving }: { freeMooving: boolean }) => {
+const MainField = ({ freeMooving, curvatureRef  }: { freeMooving: boolean, curvatureRef: React.MutableRefObject<Record<number, number>> }) => {
   const stageRef = useRef<Stage>(null)
   const dragOffsetsRef = useRef<Record<number, { x: number; y: number }>>({})
-  const curvatureRef = useRef<Record<number, number>>({})
+
   const {
     scale,
     position,
@@ -32,7 +32,7 @@ const MainField = ({ freeMooving }: { freeMooving: boolean }) => {
         draggable={false}
       >
         <Layer x={position.x} y={position.y} scaleX={scale} scaleY={scale}>
-          <Lines dragOffsetsRef={dragOffsetsRef} stageRef={stageRef}  />
+          <Lines dragOffsetsRef={dragOffsetsRef} stageRef={stageRef} curvatureRef={curvatureRef} />
           <Stations dragOffsetsRef={dragOffsetsRef} stageRef={stageRef} />
           <StationLabels dragOffsetsRef={dragOffsetsRef} stageRef={stageRef} />
         </Layer>

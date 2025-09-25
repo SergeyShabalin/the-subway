@@ -10,7 +10,7 @@ interface DiameterLineProps {
 }
 
 export const DiameterLine: FC<DiameterLineProps> = ({ line, segment, fromStation, toStation }) => {
-  const radius = 12
+  const radius = 15
   const x1 = fromStation.x
   const y1 = fromStation.y
   const x2 = toStation.x

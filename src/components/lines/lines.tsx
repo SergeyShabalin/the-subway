@@ -8,9 +8,10 @@ import type { Stage } from 'konva/lib/Stage'
 interface LinesProps {
   dragOffsetsRef: React.MutableRefObject<Record<number, { x: number; y: number }>>
   stageRef: React.RefObject<Stage>
+  curvatureRef: React.MutableRefObject<Record<number, number>>
 }
 
-export const Lines: FC<LinesProps> = ({ dragOffsetsRef }) => {
+export const Lines: FC<LinesProps> = ({ dragOffsetsRef, curvatureRef }) => {
   const { metroNetwork } = useMetro()
 
   return (
@@ -59,9 +60,9 @@ export const Lines: FC<LinesProps> = ({ dragOffsetsRef }) => {
                 key={key}
                 id={`line-${line.id}-${seg.fromStationId}-${seg.toStationId}`}
                 line={line}
-                segment={seg}
                 fromStation={fromPos}
                 toStation={toPos}
+                curvatureRef={curvatureRef}
               />
             )
           }

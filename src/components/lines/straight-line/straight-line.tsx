@@ -17,7 +17,7 @@ export const StraightLine = ({
                                segment,
                                fromStation,
                                toStation,
-                               radiusStation = 12
+                               radiusStation = 15
                              }: StraightLineProps) => {
   const lineRef = useRef<any>(null)
 

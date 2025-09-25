@@ -1,14 +1,58 @@
 import { Sidebar } from '../ui'
 import { useVisualization } from '../../store/hooks/use-visualization.ts'
 import { useMetro } from '../../store/hooks/use-metro.ts'
+import { useState, useCallback, useEffect } from 'react'
 
-const ControlPanel = () => {
+const ControlPanel = ({ curvatureRef, stageRef }) => {
   const {
     circleRadius,
     actions: visActions,
   } = useVisualization()
   const { metroNetwork, activeLineId, actions: metroActions } = useMetro()
 
+  const [curvatureValue, setCurvatureValue] = useState(0)
+
+  // Инициализация значения кривизны при смене активной линии
+  useEffect(() => {
+    if (activeLineId !== null) {
+      const currentCurvature = curvatureRef.current[activeLineId] ?? 50
+      setCurvatureValue(currentCurvature)
+    }
+  }, [activeLineId, curvatureRef])
+
+  const changeCurvatureRef = useCallback((curvature: number) => {
+    if (activeLineId === null) return
+
+    // ✅ Быстрое обновление ref без перерендера
+    curvatureRef.current = {
+      ...curvatureRef.current,
+      [activeLineId]: curvature
+    }
+
+    // ✅ Немедленное обновление всех линий через Stage API
+    updateAllLinesCurvature(activeLineId, curvature)
+  }, [activeLineId, curvatureRef])
+
+  // Функция для немедленного обновления всех линий
+  const updateAllLinesCurvature = useCallback((lineId: number, curvature: number) => {
+    // Находим все Path элементы для этой линии
+    const linePaths = document.querySelectorAll(`[id^="line-${lineId}-"]`)
+
+    linePaths.forEach(pathElement => {
+      const path = (pathElement as any).getNode?.()
+      if (path && path.attrs.originalCoords) {
+        const { from, to, line } = path.attrs.originalCoords
+
+        // Пересчитываем путь с новой кривизной
+        const newData = recalcPath(from, to, line, curvature)
+        path.data(newData)
+      }
+    })
+
+    // Принудительное обновление слоя
+    const layer = document.querySelector('konva-layer')?.getNode?.()
+    layer?.batchDraw()
+  }, [])
 
   const handleRadiusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newRadius = parseFloat(e.target.value)
@@ -19,20 +63,9 @@ const ControlPanel = () => {
     }
   }
 
-  // 🔹 Обработчик выравнивания (по кнопке)
-  const handleAlignCircle = () => {
-    if (!activeLineId) return
-    const line = metroNetwork.find((l) => l.id === activeLineId)
-    if (!line?.locking) return
-
-    // Используем текущий радиус из store
-    const currentRadius = circleRadius
-    metroActions.alignLineToCircle(activeLineId, currentRadius)
-  }
-
   const handleLineChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value ? parseInt(e.target.value) : null
-    metroActions.setActiveLineId(id) // 👈 ТЕПЕРЬ МЕНЯЕМ activeLineId В REDUX!
+    metroActions.setActiveLineId(id)
   }
 
   return (
@@ -62,7 +95,7 @@ const ControlPanel = () => {
           </span>
           <select
             value={activeLineId || ''}
-            onChange={handleLineChange} // 👈 ТЕПЕРЬ ОБНОВЛЯЕМ activeLineId В STORE
+            onChange={handleLineChange}
             style={{ marginLeft: '20px', padding: '4px', fontSize: '14px' }}
           >
             <option value="">Выберите линию...</option>
@@ -75,15 +108,6 @@ const ControlPanel = () => {
               ))}
           </select>
 
-          <button
-            onClick={handleAlignCircle}
-            style={{
-              margin: '20px',
-              padding: '6px 16px',
-            }}
-          >
-            Выровнять круг
-          </button>
           <div
             style={{ display: 'flex', alignItems: 'center', marginTop: '12px' }}
           >
@@ -103,22 +127,16 @@ const ControlPanel = () => {
                   min="0"
                   max="100"
                   step="1"
-                  value={
-                    metroNetwork.find((l) => l.id === activeLineId)
-                      ?.curvatureLines || 50
-                  }
+                  value={curvatureValue}
                   onChange={(e) => {
                     const newCurvature = Number(e.target.value)
-                    console.log(newCurvature)
-                    metroActions.updateLineCurvature(activeLineId, newCurvature)
+                    setCurvatureValue(newCurvature)
+                    changeCurvatureRef(newCurvature)
                   }}
                   style={{ width: '200px', margin: '0 10px' }}
                 />
                 <span style={{ fontSize: '14px', color: '#555' }}>
-                  {Math.round(
-                    metroNetwork.find((l) => l.id === activeLineId)
-                      ?.curvatureLines || 50,
-                  )}
+                  {curvatureValue}
                 </span>
               </div>
             )}
