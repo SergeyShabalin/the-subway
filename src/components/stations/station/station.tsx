@@ -1,5 +1,5 @@
 import { Circle, Line } from 'react-konva'
-import { memo, useCallback, useState } from 'react'
+import { memo, type RefObject, useCallback, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { updateStationPosition } from '../../../store/slices/metro-slices.ts'
 import type { Stage } from 'konva/lib/Stage'
@@ -12,6 +12,7 @@ interface StationProps {
   hoveredStationId: number | null
   handleMouseEnter: (id: number) => void
   handleMouseLeave: () => void
+  circleRadiusRef: RefObject<number>
 }
 
 export const Station = memo(({
@@ -20,11 +21,15 @@ export const Station = memo(({
                                stageRef,
                                hoveredStationId,
                                handleMouseEnter,
-                               handleMouseLeave
+                               handleMouseLeave,
+                               circleRadiusRef
                              }: StationProps) => {
   const dispatch = useDispatch()
   const { metroNetwork } = useMetro()
   const [isHovered, setIsHovered] = useState(false)
+
+  const radiusRef = useRef<any>(null)
+
 
   const getLivePos = (stationId: number) => {
     const st = metroNetwork.flatMap(l => l.stations).find(s => s.id === stationId)
@@ -186,7 +191,6 @@ export const Station = memo(({
     const node = e.target;
     delete dragOffsetsRef.current[station.id]
 
-    // Возвращаем курсор grab, если мышь все еще над станцией
     if (isHovered) {
       updateCursor('grab')
     } else {
@@ -204,7 +208,7 @@ export const Station = memo(({
 
   const getStationStyles = () => {
     return {
-      fill: isHovered ? `${station.color}20` : 'transparent',
+      fill: isHovered ? `${station.color}` : 'transparent',
       stroke: station.color,
       strokeWidth: isHovered ? 3 : 2,
       shadowColor: isHovered ? station.color : 'rgba(0,0,0,0.2)',
@@ -217,7 +221,7 @@ export const Station = memo(({
     <Circle
       x={station.x + currentOffset.x}
       y={station.y + currentOffset.y}
-      radius={14} // Увеличим радиус для лучшего попадания
+      radius={14}
       {...getStationStyles()}
       draggable
       onMouseEnter={handleMouseEnterStation}
@@ -228,7 +232,6 @@ export const Station = memo(({
       perfectDrawEnabled={false}
       listening={true}
       shadowEnabled={true}
-      // Увеличиваем хит-область для лучшего взаимодействия
       hitStrokeWidth={20}
     />
   )

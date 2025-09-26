@@ -6,7 +6,15 @@ import { Stations } from '../stations/stations.tsx'
 import { Lines } from '../lines/lines.tsx'
 import { StationLabels } from '../station-labels/station-labels.tsx'
 
-const MainField = ({ freeMooving, curvatureRef  }: { freeMooving: boolean, curvatureRef: React.MutableRefObject<Record<number, number>> }) => {
+const MainField = ({
+                     freeMooving,
+                     curvatureRef,
+                     circleRadiusRef
+                   }: {
+  freeMooving: boolean,
+  curvatureRef: React.MutableRefObject<Record<number, number>>,
+  circleRadiusRef: React.MutableRefObject<number>
+}) => {
   const stageRef = useRef<Stage>(null)
   const dragOffsetsRef = useRef<Record<number, { x: number; y: number }>>({})
 
@@ -32,8 +40,17 @@ const MainField = ({ freeMooving, curvatureRef  }: { freeMooving: boolean, curva
         draggable={false}
       >
         <Layer x={position.x} y={position.y} scaleX={scale} scaleY={scale}>
-          <Lines dragOffsetsRef={dragOffsetsRef} stageRef={stageRef} curvatureRef={curvatureRef} />
-          <Stations dragOffsetsRef={dragOffsetsRef} stageRef={stageRef} />
+          <Lines
+            dragOffsetsRef={dragOffsetsRef}
+            stageRef={stageRef}
+            curvatureRef={curvatureRef}
+            circleRadiusRef={circleRadiusRef}
+          />
+          <Stations
+            dragOffsetsRef={dragOffsetsRef}
+            stageRef={stageRef}
+            circleRadiusRef={circleRadiusRef} // ✅ Передаем в Stations
+          />
           <StationLabels dragOffsetsRef={dragOffsetsRef} stageRef={stageRef} />
         </Layer>
       </ReactStage>
@@ -42,4 +59,3 @@ const MainField = ({ freeMooving, curvatureRef  }: { freeMooving: boolean, curva
 }
 
 export { MainField }
-

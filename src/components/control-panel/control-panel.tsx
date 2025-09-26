@@ -1,66 +1,31 @@
 import { Sidebar } from '../ui'
 import { useVisualization } from '../../store/hooks/use-visualization.ts'
 import { useMetro } from '../../store/hooks/use-metro.ts'
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { Curvature } from './lines/curvature/curvature.tsx'
+import { CircleRadius } from './lines/circle-radius/circle-radius.tsx'
+import type { IControlPanelProps } from './types.ts'
 
-const ControlPanel = ({ curvatureRef, stageRef }) => {
+const ControlPanel = ({ curvatureRef, circleRadiusRef }: IControlPanelProps) => {
   const {
-    circleRadius,
+    circleRadius: storeCircleRadius,
     actions: visActions,
   } = useVisualization()
+
   const { metroNetwork, activeLineId, actions: metroActions } = useMetro()
+  const [radiusValue, setRadiusValue] = useState(storeCircleRadius)
 
-  const [curvatureValue, setCurvatureValue] = useState(0)
-
-  // Инициализация значения кривизны при смене активной линии
+  // Инициализация значения радиуса
   useEffect(() => {
-    if (activeLineId !== null) {
-      const currentCurvature = curvatureRef.current[activeLineId] ?? 50
-      setCurvatureValue(currentCurvature)
-    }
-  }, [activeLineId, curvatureRef])
-
-  const changeCurvatureRef = useCallback((curvature: number) => {
-    if (activeLineId === null) return
-
-    // ✅ Быстрое обновление ref без перерендера
-    curvatureRef.current = {
-      ...curvatureRef.current,
-      [activeLineId]: curvature
-    }
-
-    // ✅ Немедленное обновление всех линий через Stage API
-    updateAllLinesCurvature(activeLineId, curvature)
-  }, [activeLineId, curvatureRef])
-
-  // Функция для немедленного обновления всех линий
-  const updateAllLinesCurvature = useCallback((lineId: number, curvature: number) => {
-    // Находим все Path элементы для этой линии
-    const linePaths = document.querySelectorAll(`[id^="line-${lineId}-"]`)
-
-    linePaths.forEach(pathElement => {
-      const path = (pathElement as any).getNode?.()
-      if (path && path.attrs.originalCoords) {
-        const { from, to, line } = path.attrs.originalCoords
-
-        // Пересчитываем путь с новой кривизной
-        const newData = recalcPath(from, to, line, curvature)
-        path.data(newData)
-      }
-    })
-
-    // Принудительное обновление слоя
-    const layer = document.querySelector('konva-layer')?.getNode?.()
-    layer?.batchDraw()
-  }, [])
+    circleRadiusRef.current = storeCircleRadius
+    setRadiusValue(storeCircleRadius)
+  }, [circleRadiusRef, storeCircleRadius])
 
   const handleRadiusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newRadius = parseFloat(e.target.value)
-    visActions.setCircleRadius(newRadius)
-
-    if (activeLineId !== null) {
-      metroActions.alignLineToCircle(activeLineId, newRadius)
-    }
+    const newRadius = Number(e.target.value)
+    setRadiusValue(newRadius)
+    circleRadiusRef.current = newRadius
+    // УБИРАЕМ metroActions.alignLineToCircle - будем работать через Stage API
   }
 
   const handleLineChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -78,25 +43,10 @@ const ControlPanel = ({ curvatureRef, stageRef }) => {
             borderBottom: '1px solid #ddd',
           }}
         >
-          <label style={{ marginRight: '12px', fontWeight: 'bold' }}>
-            Радиус кольцевой линии:
-          </label>
-          <input
-            type="range"
-            min="50"
-            max="1000"
-            step="5"
-            value={circleRadius}
-            onChange={handleRadiusChange}
-            style={{ width: '200px', margin: '0 10px' }}
-          />
-          <span style={{ fontSize: '14px', color: '#555' }}>
-            {Math.round(circleRadius)} px
-          </span>
           <select
             value={activeLineId || ''}
             onChange={handleLineChange}
-            style={{ marginLeft: '20px', padding: '4px', fontSize: '14px' }}
+            style={{ marginBottom: '12px', padding: '4px', fontSize: '14px' }}
           >
             <option value="">Выберите линию...</option>
             {metroNetwork
@@ -108,39 +58,27 @@ const ControlPanel = ({ curvatureRef, stageRef }) => {
               ))}
           </select>
 
-          <div
-            style={{ display: 'flex', alignItems: 'center', marginTop: '12px' }}
-          >
-            {activeLineId && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  marginTop: '12px',
-                }}
-              >
-                <label style={{ marginRight: '12px', fontWeight: 'bold' }}>
-                  Кривизна линии:
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value={curvatureValue}
-                  onChange={(e) => {
-                    const newCurvature = Number(e.target.value)
-                    setCurvatureValue(newCurvature)
-                    changeCurvatureRef(newCurvature)
-                  }}
-                  style={{ width: '200px', margin: '0 10px' }}
-                />
-                <span style={{ fontSize: '14px', color: '#555' }}>
-                  {curvatureValue}
+          <Curvature activeLineId={activeLineId} curvatureRef={curvatureRef} />
+
+          {activeLineId && (
+            <div style={{ display: 'flex', alignItems: 'center', marginTop: '12px' }}>
+                <span style={{ marginRight: '12px', fontWeight: 'bold' }}>
+                  Радиус кольцевой линии:
                 </span>
-              </div>
-            )}
-          </div>
+              <input
+                type="range"
+                min="5"
+                max="1000"
+                step="2"
+                value={radiusValue}
+                onChange={handleRadiusChange}
+                style={{ width: '200px', margin: '0 10px' }}
+              />
+              <span style={{ fontSize: '14px', color: '#555' }}>
+                  {Math.round(radiusValue)} px
+                </span>
+            </div>
+          )}
         </div>
       </Sidebar>
     </div>

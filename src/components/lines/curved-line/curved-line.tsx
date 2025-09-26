@@ -20,32 +20,31 @@ export const CurvedLine = ({ id, line, fromStation, toStation, curvatureRef }: C
     if (pathRef.current) {
       const curvature = curvatureRef.current[line.id] ?? line.curvatureLines ?? 50
 
-      // Сохраняем оригинальные координаты для быстрого пересчета
+      const newData = recalcPath(fromStation, toStation, line, curvature)
+      pathRef.current.data(newData)
+
+      // Сохраняем оригинальные координаты для быстрого обновления
       pathRef.current.attrs.originalCoords = {
         from: fromStation,
         to: toStation,
         line: line,
         curvature: curvature
       }
-
-      const newData = recalcPath(fromStation, toStation, line, curvature)
-      pathRef.current.data(newData)
     }
   }, [fromStation, toStation, line, curvatureRef])
 
-  // Инициализация и обновление при изменении позиций станций
+  // Инициализация
   useEffect(() => {
     updatePath()
-  }, [fromStation, toStation, updatePath])
+  }, [updatePath])
 
-  // Подписка на изменения кривизны через интервал (дешевле чем useEffect с зависимостью)
+  // Подписка на изменения кривизны
   useEffect(() => {
     const interval = setInterval(() => {
       if (pathRef.current && pathRef.current.attrs.originalCoords) {
         const currentCurvature = curvatureRef.current[line.id] ?? line.curvatureLines ?? 50
         const storedCurvature = pathRef.current.attrs.originalCoords.curvature
 
-        // Обновляем только если кривизна изменилась
         if (currentCurvature !== storedCurvature) {
           const { from, to, line: storedLine } = pathRef.current.attrs.originalCoords
           const newData = recalcPath(from, to, storedLine, currentCurvature)
@@ -54,7 +53,7 @@ export const CurvedLine = ({ id, line, fromStation, toStation, curvatureRef }: C
           pathRef.current.getLayer()?.batchDraw()
         }
       }
-    }, 16) // ~60 FPS
+    }, 16)
 
     return () => clearInterval(interval)
   }, [line.id, line.curvatureLines, curvatureRef])
@@ -69,7 +68,7 @@ export const CurvedLine = ({ id, line, fromStation, toStation, curvatureRef }: C
       lineJoin="round"
       shadowColor="rgba(0,0,0,0.3)"
       shadowBlur={6}
-      listening={false} // ✅ Отключаем обработку событий для повышения производительности
+      listening={false}
     />
   )
 }

@@ -6,9 +6,10 @@ import type { Stage } from 'konva/lib/Stage'
 interface StationsProps {
   dragOffsetsRef: React.MutableRefObject<Record<number, { x: number; y: number }>>
   stageRef: React.RefObject<Stage>
+  circleRadiusRef: React.MutableRefObject<number>
 }
 
-export const Stations = ({ dragOffsetsRef, stageRef }: StationsProps) => {
+export const Stations = ({ dragOffsetsRef, stageRef, circleRadiusRef }: StationsProps) => {
   const { metroNetwork } = useMetro()
   const [hoveredStationId, setHoveredStationId] = useState<number | null>(null)
 
@@ -31,6 +32,7 @@ export const Stations = ({ dragOffsetsRef, stageRef }: StationsProps) => {
           hoveredStationId={hoveredStationId}
           handleMouseEnter={handleMouseEnter}
           handleMouseLeave={handleMouseLeave}
+          circleRadiusRef={circleRadiusRef}
         />
       ))}
     </>

@@ -1,10 +1,11 @@
 import './global.css'
 import { ControlPanel, MainField } from './components'
-import {   useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
 const App = () => {
   const [freeMoving, setFreeMoving] = useState<boolean>(false)
   const curvatureRef = useRef<Record<number, number>>({})
+  const circleRadiusRef = useRef<number>(300) // ✅ Новый ref для радиуса кольцевой линии
 
   return (
     <div className="content">
@@ -17,8 +18,8 @@ const App = () => {
         />
         Режим свободного перемещения
       </label>
-      <ControlPanel curvatureRef={curvatureRef}/>
-      <MainField freeMooving={freeMoving} curvatureRef={curvatureRef} />
+      <ControlPanel curvatureRef={curvatureRef} circleRadiusRef={circleRadiusRef} />
+      <MainField freeMooving={freeMoving} curvatureRef={curvatureRef} circleRadiusRef={circleRadiusRef} />
     </div>
   )
 }

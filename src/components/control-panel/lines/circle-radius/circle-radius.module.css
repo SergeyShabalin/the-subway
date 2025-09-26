@@ -1,0 +1,15 @@
+.wrapper {
+    font-family: 'Roboto Light', 'Helvetica', 'Arial', sans-serif;
+    color: #b8b3b3;
+    display: block;
+    align-items: center;
+}
+
+.value {
+    color: #b8b3b3;
+}
+
+.range {
+    width: 200px;
+    margin: 0 10px;
+}
