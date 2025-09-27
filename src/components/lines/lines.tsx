@@ -9,7 +9,7 @@ interface LinesProps {
   dragOffsetsRef: React.MutableRefObject<Record<number, { x: number; y: number }>>
   stageRef: React.RefObject<Stage>
   curvatureRef: React.MutableRefObject<Record<number, number>>
-  circleRadiusRef: React.MutableRefObject<number> // ✅ Новый prop
+  circleRadiusRef: React.MutableRefObject<number>
 }
 
 export const Lines: FC<LinesProps> = ({ dragOffsetsRef, curvatureRef }) => {
