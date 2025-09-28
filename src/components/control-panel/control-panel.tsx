@@ -69,7 +69,7 @@ const ControlPanel = ({ curvatureRef, circleRadiusRef }: IControlPanelProps) => 
                 type="range"
                 min="5"
                 max="1000"
-                step="2"
+                step="20"
                 value={radiusValue}
                 onChange={handleRadiusChange}
                 style={{ width: '200px', margin: '0 10px' }}

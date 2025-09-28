@@ -5,7 +5,7 @@ import { updateStationPosition } from '../../../store/slices/metro-slices.ts'
 import type { Stage } from 'konva/lib/Stage'
 import { useMetro } from '../../../store/hooks/use-metro.ts'
 
-// Вспомогательные функции (вынесены, чтобы использовать везде)
+// Вспомогательные функции
 export const getPointOnCircleEdge = (
   fromPos: { x: number; y: number },
   toPos: { x: number; y: number },
@@ -73,17 +73,17 @@ export const Station = memo(({
     angleRef.current = angle
   }, [station.x, station.y, isLockedCircular, stationLine])
 
-  // Функция обновления связанных элементов (метки, линии)
+  // Обновление меток и линий при перемещении станции
   const updateConnectedElements = useCallback((newX: number, newY: number) => {
     const stage = stageRef.current
     if (!stage) return
 
-    // Обновляем dragOffsetsRef
+    // обновляем смещения
     const dx = newX - station.x
     const dy = newY - station.y
     dragOffsetsRef.current[station.id] = { x: dx, y: dy }
 
-    // Метка
+    // обновляем лейбл
     const labelNode = stage.findOne(`#label-${station.id}`)
     if (labelNode) {
       labelNode.position({
@@ -92,7 +92,7 @@ export const Station = memo(({
       })
     }
 
-    // Линии
+    // обновляем линии
     const lineNodes = stage.find(node => {
       const id = node.getId?.()
       if (!id || !id.startsWith('line-')) return false
@@ -104,7 +104,8 @@ export const Station = memo(({
     })
 
     lineNodes.forEach(node => {
-      if (node.getClassName() === 'Line') {
+      if (node.getClassName && node.getClassName() === 'Line') {
+        // прямые линии
         const line = node as any
         const parts = line.getId().split('-')
         const fromId = parseInt(parts[2], 10)
@@ -118,16 +119,12 @@ export const Station = memo(({
         const getLivePos = (stationId: number) => {
           const st = metroNetwork.flatMap(l => l.stations).find(s => s.id === stationId)
           if (!st) return { x: 0, y: 0 }
-          const offset = dragOffsetsRef.current[stationId] ?? { x: 0, y: 0 }
-          return { x: st.x + offset.x, y: st.y + offset.y }
+          const offs = dragOffsetsRef.current[stationId] ?? { x: 0, y: 0 }
+          return { x: st.x + offs.x, y: st.y + offs.y }
         }
 
-        const fromPos = fromId === station.id
-          ? { x: newX, y: newY }
-          : getLivePos(fromId)
-        const toPos = toId === station.id
-          ? { x: newX, y: newY }
-          : getLivePos(toId)
+        const fromPos = fromId === station.id ? { x: newX, y: newY } : getLivePos(fromId)
+        const toPos   = toId   === station.id ? { x: newX, y: newY } : getLivePos(toId)
 
         const dxLine = toPos.x - fromPos.x
         const dyLine = toPos.y - fromPos.y
@@ -146,28 +143,22 @@ export const Station = memo(({
         points[3] = toEdge.y + py * actualOffset
 
         line.points(points)
-      } else if (node.getClassName() === 'Path') {
+      } else if (node.getClassName && node.getClassName() === 'Path') {
+        // кривые линии
         const orig = node.attrs.originalCoords
         if (!orig) return
 
-        // ВСЕГДА получаем актуальные позиции обеих станций
-        const getLivePos = (stationId: number) => {
-          const st = metroNetwork.flatMap(l => l.stations).find(s => s.id === stationId)
+        const { fromId, toId, lineId, curvature } = orig
+
+        const getLivePos = (id: number) => {
+          const st = metroNetwork.flatMap(l => l.stations).find(s => s.id === id)
           if (!st) return { x: 0, y: 0 }
-          const offset = dragOffsetsRef.current[stationId] ?? { x: 0, y: 0 }
-          return { x: st.x + offset.x, y: st.y + offset.y }
+          const offs = dragOffsetsRef.current[id] ?? { x: 0, y: 0 }
+          return { x: st.x + offs.x, y: st.y + offs.y }
         }
 
-        const fromStation = orig.from.id === station.id
-          ? { x: newX, y: newY }
-          : getLivePos(orig.from.id)
-
-        const toStation = orig.to.id === station.id
-          ? { x: newX, y: newY }
-          : getLivePos(orig.to.id)
-
-
-
+        const fromStation = fromId === station.id ? { x: newX, y: newY } : getLivePos(fromId)
+        const toStation   = toId   === station.id ? { x: newX, y: newY } : getLivePos(toId)
 
         const midX = (fromStation.x + toStation.x) / 2
         const midY = (fromStation.y + toStation.y) / 2
@@ -178,13 +169,14 @@ export const Station = memo(({
 
         const perpX = -dyLine / length
         const perpY = dxLine / length
+
         const control = {
-          x: midX + perpX * (orig.curvature ?? 50),
-          y: midY + perpY * (orig.curvature ?? 50)
+          x: midX + perpX * (curvature ?? 50),
+          y: midY + perpY * (curvature ?? 50)
         }
 
         const start = getPointOnCircleEdge(fromStation, control, 14)
-        const end = getPointOnCircleEdge(toStation, control, 14)
+        const end   = getPointOnCircleEdge(toStation, control, 14)
 
         node.data(`M ${start.x},${start.y} Q ${control.x},${control.y} ${end.x},${end.y}`)
       }
@@ -193,7 +185,7 @@ export const Station = memo(({
     circleRef.current?.getLayer()?.batchDraw()
   }, [dragOffsetsRef, stageRef, station, metroNetwork])
 
-  // Подписка на circleRadiusRef
+  // Следим за изменением радиуса для круговой линии
   useEffect(() => {
     if (!isActiveCircular || !circleRef.current) return
 
@@ -207,17 +199,14 @@ export const Station = memo(({
       const newX = centerX + radius * Math.cos(angle)
       const newY = centerY + radius * Math.sin(angle)
 
-      // Обновляем позицию через Konva API
       circleRef.current.position({ x: newX, y: newY })
-
-      // Обновляем всё остальное
       updateConnectedElements(newX, newY)
     }, 16)
 
     return () => clearInterval(interval)
   }, [isActiveCircular, circleRadiusRef, updateConnectedElements])
 
-  // --- Drag-логика ---
+  // Drag-логика
   const updateCursor = useCallback((cursorType: string) => {
     const stage = stageRef.current
     if (stage && stage.container()) {
@@ -225,13 +214,13 @@ export const Station = memo(({
     }
   }, [stageRef])
 
-  const handleMouseEnterStation = useCallback((e: any) => {
+  const handleMouseEnterStation = useCallback(() => {
     setIsHovered(true)
     handleMouseEnter(station.id)
     updateCursor('grab')
   }, [handleMouseEnter, station.id, updateCursor])
 
-  const handleMouseLeaveStation = useCallback((e: any) => {
+  const handleMouseLeaveStation = useCallback(() => {
     setIsHovered(false)
     handleMouseLeave()
     updateCursor('default')
@@ -239,30 +228,20 @@ export const Station = memo(({
 
   const handleDragMove = useCallback((e: any) => {
     if (isActiveCircular) return
-
     const node = e.target
-    const newX = node.x()
-    const newY = node.y()
-
-    updateConnectedElements(newX, newY)
+    updateConnectedElements(node.x(), node.y())
   }, [updateConnectedElements, isActiveCircular])
 
-  const handleDragStart = useCallback((e: any) => {
+  const handleDragStart = useCallback(() => {
     if (isActiveCircular) return
     updateCursor('grabbing')
   }, [updateCursor, isActiveCircular])
 
   const handleDragEnd = useCallback((e: any) => {
     if (isActiveCircular) return
-
     const node = e.target
     delete dragOffsetsRef.current[station.id]
-
-    if (isHovered) {
-      updateCursor('grab')
-    } else {
-      updateCursor('default')
-    }
+    updateCursor(isHovered ? 'grab' : 'default')
 
     dispatch(updateStationPosition({
       stationId: station.id,
@@ -282,7 +261,8 @@ export const Station = memo(({
       fill={isHovered ? station.color : 'transparent'}
       stroke={station.color}
       strokeWidth={isHovered ? 3 : 2}
-      shadowColor={isHovered ? station.color : 'rgba(0,0,0,0.2)'}
+      shadowColor={isHovered ? station.color : 'rgba(0,0,0,0.2)'
+      }
       shadowBlur={isHovered ? 10 : 5}
       shadowOpacity={isHovered ? 0.6 : 0.4}
       draggable={draggable}

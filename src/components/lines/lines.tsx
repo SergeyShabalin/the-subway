@@ -64,6 +64,7 @@ export const Lines: FC<LinesProps> = ({ dragOffsetsRef, curvatureRef }) => {
                 fromStation={fromPos}
                 toStation={toPos}
                 curvatureRef={curvatureRef}
+                dragOffsetsRef={dragOffsetsRef}
               />
             )
           }

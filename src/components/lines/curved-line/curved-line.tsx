@@ -1,62 +1,103 @@
 import { Path } from 'react-konva'
 import { useRef, useEffect, useCallback } from 'react'
 import { recalcPath } from './utils/recalc-path.ts'
+import { useMetro } from '../../../store/hooks/use-metro.ts' // путь по вашему проекту
 import type { Station } from '../../stations/station/types.ts'
 import type { Line } from '../../../store/slices/metro-slices.ts'
 
 interface CurvedLineProps {
   id: string
   line: Line
-  fromStation: Station
+  fromStation: Station // содержит id, x, y
   toStation: Station
   curvatureRef: React.MutableRefObject<Record<number, number>>
+  dragOffsetsRef: React.MutableRefObject<Record<number, { x: number; y: number }>>
 }
 
-export const CurvedLine = ({ id, line, fromStation, toStation, curvatureRef }: CurvedLineProps) => {
+export const CurvedLine = ({
+                             id,
+                             line,
+                             fromStation,
+                             toStation,
+                             curvatureRef,
+                             dragOffsetsRef,
+                           }: CurvedLineProps) => {
   const pathRef = useRef<any>(null)
+  const rafRef = useRef<number | null>(null)
+  const prevCurvRef = useRef<number | null>(null)
+  const { metroNetwork } = useMetro()
 
-  // Функция для обновления пути
-  const updatePath = useCallback(() => {
-    if (pathRef.current) {
-      const curvature = curvatureRef.current[line.id] ?? line.curvatureLines ?? 50
+  // Вспомогательная: получить "живую" позицию станции (store + dragOffsetsRef)
+  const getLivePos = useCallback(
+    (stationId: number) => {
+      const st = metroNetwork.flatMap(l => l.stations).find(s => s.id === stationId)
+      if (!st) return { x: 0, y: 0, id: stationId }
+      const offs = dragOffsetsRef.current[stationId] ?? { x: 0, y: 0 }
+      return { ...st, x: st.x + offs.x, y: st.y + offs.y }
+    },
+    [metroNetwork, dragOffsetsRef]
+  )
 
-      const newData = recalcPath(fromStation, toStation, line, curvature)
-      pathRef.current.data(newData)
+  // Функция, которая пересчитывает path на основе live позиций и текущей кривизны
+  const recomputeIfNeeded = useCallback(() => {
+    if (!pathRef.current) return
 
-      // Сохраняем оригинальные координаты для быстрого обновления
-      pathRef.current.attrs.originalCoords = {
-        from: fromStation,
-        to: toStation,
-        line: line,
-        curvature: curvature
-      }
+    const currentCurvature = curvatureRef.current[line.id] ?? line.curvatureLines ?? 50
+    if (prevCurvRef.current === currentCurvature && !pathRef.current.attrs.forceRecalc) {
+      // ничего не изменилось — можно выйти
+      return
     }
-  }, [fromStation, toStation, line, curvatureRef])
 
-  // Инициализация
+    // Получаем live позиции по id (не используем snapshot из props, т.к. он может быть stale)
+    const fromLive = getLivePos(fromStation.id)
+    const toLive = getLivePos(toStation.id)
+
+    const newData = recalcPath(fromLive, toLive, line, currentCurvature)
+
+    pathRef.current.data(newData)
+    // Сохраняем метаданные (id + текущая кривизна)
+    pathRef.current.attrs.originalCoords = {
+      fromId: fromLive.id,
+      toId: toLive.id,
+      lineId: line.id,
+      curvature: currentCurvature,
+    }
+
+    // очищаем маркер forceRecalc если был
+    delete pathRef.current.attrs.forceRecalc
+
+    pathRef.current.getLayer()?.batchDraw()
+    prevCurvRef.current = currentCurvature
+  }, [curvatureRef, line, getLivePos, fromStation.id, toStation.id])
+
+  // Инициализация (при маунте) — первый расчёт
   useEffect(() => {
-    updatePath()
-  }, [updatePath])
+    recomputeIfNeeded()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  // Подписка на изменения кривизны
+  // rAF loop — наблюдаем за изменением curvatureRef[line.id] и за возможной меткой forceRecalc
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (pathRef.current && pathRef.current.attrs.originalCoords) {
-        const currentCurvature = curvatureRef.current[line.id] ?? line.curvatureLines ?? 50
-        const storedCurvature = pathRef.current.attrs.originalCoords.curvature
+    const loop = () => {
+      recomputeIfNeeded()
+      rafRef.current = requestAnimationFrame(loop)
+    }
+    rafRef.current = requestAnimationFrame(loop)
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+    }
+  }, [recomputeIfNeeded])
 
-        if (currentCurvature !== storedCurvature) {
-          const { from, to, line: storedLine } = pathRef.current.attrs.originalCoords
-          const newData = recalcPath(from, to, storedLine, currentCurvature)
-          pathRef.current.data(newData)
-          pathRef.current.attrs.originalCoords.curvature = currentCurvature
-          pathRef.current.getLayer()?.batchDraw()
-        }
-      }
-    }, 16)
-
-    return () => clearInterval(interval)
-  }, [line.id, line.curvatureLines, curvatureRef])
+  // Если props.fromStation / toStation меняются (например при полной перерисовке Lines),
+  // пометим node для пересчёта и запустим recompute сразу
+  useEffect(() => {
+    if (!pathRef.current) return
+    // ставим метку чтобы rAF пересчитал немедленно
+    pathRef.current.attrs.forceRecalc = true
+    recomputeIfNeeded()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromStation.x, fromStation.y, toStation.x, toStation.y, line.id])
 
   return (
     <Path
