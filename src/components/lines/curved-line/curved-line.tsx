@@ -1,9 +1,9 @@
 import { Path } from 'react-konva'
 import { useRef, useEffect, useCallback } from 'react'
 import { recalcPath } from './utils/recalc-path.ts'
-import { useMetro } from '../../../store/hooks/use-metro.ts' // путь по вашему проекту
+import { useMetro } from '@/store/hooks/use-metro.ts' // путь по вашему проекту
 import type { Station } from '../../stations/station/types.ts'
-import type { Line } from '../../../store/slices/metro-slices.ts'
+import type { Line } from '@/store/slices/metro-slices.ts'
 
 interface CurvedLineProps {
   id: string

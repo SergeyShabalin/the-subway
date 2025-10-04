@@ -121,6 +121,63 @@ const metroSlice = createSlice({
         return { ...line, stations: newStations }
       })
     },
+    evenlyDistributeStations: (state, action: PayloadAction<number>) => {
+      const lineId = action.payload
+      const lineIndex = state.metroNetwork.findIndex(l => l.id === lineId)
+
+      if (lineIndex === -1) return
+
+      const line = state.metroNetwork[lineIndex]
+      const stations = line.stations
+
+      if (stations.length < 3) return
+
+      if (line.renderStyle === 'circular' && line.locking) {
+        // Для круговой линии - равномерное распределение по окружности
+        const centerX = stations.reduce((sum, s) => sum + s.x, 0) / stations.length
+        const centerY = stations.reduce((sum, s) => sum + s.y, 0) / stations.length
+
+        // Вычисляем средний радиус
+        const avgRadius = stations.reduce((sum, station) => {
+          const dx = station.x - centerX
+          const dy = station.y - centerY
+          return sum + Math.sqrt(dx * dx + dy * dy)
+        }, 0) / stations.length
+
+        // Распределяем станции по окружности
+        const angleStep = (2 * Math.PI) / stations.length
+
+        const newStations = stations.map((station, index) => ({
+          ...station,
+          x: centerX + avgRadius * Math.cos(index * angleStep),
+          y: centerY + avgRadius * Math.sin(index * angleStep)
+        }))
+
+        // Обновляем линию с новыми станциями
+        state.metroNetwork[lineIndex] = {
+          ...line,
+          stations: newStations
+        }
+      } else {
+        // Для линейной линии - равномерное распределение вдоль прямой
+        const firstStation = stations[0]
+        const lastStation = stations[stations.length - 1]
+
+        const dx = (lastStation.x - firstStation.x) / (stations.length - 1)
+        const dy = (lastStation.y - firstStation.y) / (stations.length - 1)
+
+        const newStations = stations.map((station, index) => ({
+          ...station,
+          x: firstStation.x + dx * index,
+          y: firstStation.y + dy * index
+        }))
+
+        state.metroNetwork[lineIndex] = {
+          ...line,
+          stations: newStations
+        }
+      }
+    }
   },
 })
 
@@ -129,6 +186,7 @@ export const {
   setActiveLineId,
   updateLineCurvature,
   alignLineToCircle,
+  evenlyDistributeStations
 } = metroSlice.actions
 
 export default metroSlice.reducer

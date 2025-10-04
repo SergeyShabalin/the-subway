@@ -1,5 +1,6 @@
 import styles from './sidebar.module.css'
 import { useState } from 'react'
+import { RadiusIcon } from '@assets/arrow-icon.tsx'
 
 const Sidebar = ({ children }) => {
   const [isActive, setIsActive] = useState<boolean>(true)
@@ -14,7 +15,7 @@ const Sidebar = ({ children }) => {
         className={`${styles.switch} ${isActive ? styles.switchActive : ''}`}
         onClick={openCloseSidebar}
       >
-        настройки
+        <RadiusIcon strokeColor={'gray'} />
       </div>
 
       <div

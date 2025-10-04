@@ -1,0 +1,49 @@
+.wrapper {
+    position: relative;
+    display: block;
+
+}
+
+
+.placeholder{
+    position: absolute;
+    top: 5px;
+
+
+    font-size: 14px;
+    color: #9f9999;
+}
+
+.input{
+      width: 80%;
+}
+
+.value{
+  font-size: 14px;
+    color: #555;
+    display: flex;
+    align-items: center;
+    justify-content: right;
+    background-color: #10d935;
+    min-width: 10%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.icon{
+
+    width: 10%;
+    text-align: center;
+}
+
+.combo{
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+    background-color: #2a2c2a;
+    padding: 20px 10px;
+    border-radius: 12px;
+
+}

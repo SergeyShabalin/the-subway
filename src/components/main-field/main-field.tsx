@@ -2,19 +2,15 @@ import { Layer, Stage as ReactStage } from 'react-konva'
 import { useRef } from 'react'
 import { useInteractiveStage } from './hooks/use-interactive-stage.ts'
 import type { Stage } from 'konva/lib/Stage'
-import { Stations } from '../stations/stations.tsx'
-import { Lines } from '../lines/lines.tsx'
-import { StationLabels } from '../station-labels/station-labels.tsx'
+import { Stations, Lines, StationLabels } from '@/components'
+import type { IMainFieldProps } from '@components/main-field/types.ts'
+import styles from './main-field.module.css'
 
 const MainField = ({
-                     freeMooving,
-                     curvatureRef,
-                     circleRadiusRef
-                   }: {
-  freeMooving: boolean,
-  curvatureRef: React.MutableRefObject<Record<number, number>>,
-  circleRadiusRef: React.MutableRefObject<number>
-}) => {
+  freeMoving,
+  curvatureRef,
+  circleRadiusRef,
+}: IMainFieldProps) => {
   const stageRef = useRef<Stage>(null)
   const dragOffsetsRef = useRef<Record<number, { x: number; y: number }>>({})
 
@@ -25,10 +21,13 @@ const MainField = ({
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
-  } = useInteractiveStage({ stageRef, canMove: freeMooving })
+  } = useInteractiveStage({
+    stageRef,
+    canMove: freeMoving,
+  })
 
   return (
-    <div style={{ border: '1px solid gray', width: '1910px', height: '1070px' }}>
+    <div className={styles.container} >
       <ReactStage
         width={1920}
         height={1080}
@@ -40,18 +39,13 @@ const MainField = ({
         draggable={false}
       >
         <Layer x={position.x} y={position.y} scaleX={scale} scaleY={scale}>
-          <Lines
-            dragOffsetsRef={dragOffsetsRef}
-            stageRef={stageRef}
-            curvatureRef={curvatureRef}
-            circleRadiusRef={circleRadiusRef}
-          />
+          <Lines dragOffsetsRef={dragOffsetsRef} curvatureRef={curvatureRef} />
           <Stations
             dragOffsetsRef={dragOffsetsRef}
             stageRef={stageRef}
-            circleRadiusRef={circleRadiusRef} // ✅ Передаем в Stations
+            circleRadiusRef={circleRadiusRef}
           />
-          <StationLabels dragOffsetsRef={dragOffsetsRef} stageRef={stageRef} />
+          <StationLabels dragOffsetsRef={dragOffsetsRef} />
         </Layer>
       </ReactStage>
     </div>

@@ -1,88 +1,124 @@
-import { FC } from 'react'
-import { useMetro } from '../../store/hooks/use-metro.ts'
+import { useMemo } from 'react'
+import type { FC } from 'react'
+import { useMetro } from '@/store/hooks/use-metro.ts'
 import { StraightLine } from './straight-line/straight-line.tsx'
 import { CurvedLine } from './curved-line/curved-line.tsx'
 import { DiameterLine } from './diameter-line/diameter-line.tsx'
-import type { Stage } from 'konva/lib/Stage'
 
-interface LinesProps {
-  dragOffsetsRef: React.MutableRefObject<Record<number, { x: number; y: number }>>
-  stageRef: React.RefObject<Stage>
-  curvatureRef: React.MutableRefObject<Record<number, number>>
-  circleRadiusRef: React.MutableRefObject<number>
+import type { ILinesProps } from '@components/lines/types.ts'
+import { LineType } from '@components/lines/const.ts'
+
+
+const lineComponents: Record<LineType, React.ComponentType<any>> = {
+  [LineType.Linear]: StraightLine,
+  [LineType.Circular]: CurvedLine,
+  [LineType.Diameter]: DiameterLine,
 }
 
-export const Lines: FC<LinesProps> = ({ dragOffsetsRef, curvatureRef }) => {
+
+const createLineComponent = (
+  lineType: LineType,
+  key: string,
+  line: any,
+  fromPos: any,
+  toPos: any,
+  segment: any,
+  curvatureRef: any,
+  dragOffsetsRef: any
+) => {
+  const LineComponent = lineComponents[lineType]
+  if (!LineComponent) return null
+
+  const baseProps = {
+    id: key,
+    line,
+    fromStation: fromPos,
+    toStation: toPos,
+  }
+
+  switch (lineType) {
+    case LineType.Linear:
+    case LineType.Diameter:
+      return (
+        <LineComponent
+          key={key}
+          {...baseProps}
+          segment={segment}
+        />
+      )
+    case LineType.Circular:
+      return (
+        <LineComponent
+          key={key}
+          {...baseProps}
+          curvatureRef={curvatureRef}
+          dragOffsetsRef={dragOffsetsRef}
+        />
+      )
+    default:
+      return null
+  }
+}
+
+export const Lines: FC<ILinesProps> = ({ dragOffsetsRef, curvatureRef }) => {
   const { metroNetwork } = useMetro()
 
-  return (
-    <>
-      {metroNetwork.flatMap(line => {
-        const segments = [...line.segments]
+  const linesWithSegments = useMemo(() => {
+    return metroNetwork.flatMap((line) => {
+      const segments = [...line.segments]
 
-        if (line.locking && line.stations.length >= 2) {
-          const first = line.stations[0]
-          const last = line.stations[line.stations.length - 1]
-          const hasLoop = line.segments.some(
-            seg => seg.fromStationId === last.id && seg.toStationId === first.id
-          )
-          if (!hasLoop) {
-            segments.push({ fromStationId: last.id, toStationId: first.id, timeMinutes: 0 })
-          }
+      if (line.locking && line.stations.length >= 2) {
+        const first = line.stations[0]
+        const last = line.stations[line.stations.length - 1]
+        const hasLoop = line.segments.some(
+          (seg) => seg.fromStationId === last.id && seg.toStationId === first.id,
+        )
+        if (!hasLoop) {
+          segments.push({
+            fromStationId: last.id,
+            toStationId: first.id,
+            timeMinutes: 0,
+          })
+        }
+      }
+
+      return segments.flatMap((seg) => {
+        const fromStation = line.stations.find((s) => s.id === seg.fromStationId)
+        const toStation = line.stations.find((s) => s.id === seg.toStationId)
+
+        if (!fromStation || !toStation) return []
+
+        const individualOffsetFrom = dragOffsetsRef.current[fromStation.id] || { x: 0, y: 0 }
+        const individualOffsetTo = dragOffsetsRef.current[toStation.id] || { x: 0, y: 0 }
+
+        const fromPos = {
+          ...fromStation,
+          x: fromStation.x + individualOffsetFrom.x,
+          y: fromStation.y + individualOffsetFrom.y,
         }
 
-        return segments.flatMap(seg => {
-          const from = line.stations.find(s => s.id === seg.fromStationId)
-          const to = line.stations.find(s => s.id === seg.toStationId)
-          if (!from || !to) return []
+        const toPos = {
+          ...toStation,
+          x: toStation.x + individualOffsetTo.x,
+          y: toStation.y + individualOffsetTo.y,
+        }
 
-          const offsetFrom = dragOffsetsRef.current[from.id] || { x: 0, y: 0 }
-          const offsetTo = dragOffsetsRef.current[to.id] || { x: 0, y: 0 }
+        const key = `line-${line.id}-${seg.fromStationId}-${seg.toStationId}`
+        const lineType = line.renderStyle as LineType
 
-          const fromPos = { ...from, x: from.x + offsetFrom.x, y: from.y + offsetFrom.y }
-          const toPos = { ...to, x: to.x + offsetTo.x, y: to.y + offsetTo.y }
+        return createLineComponent(
+          lineType,
+          key,
+          line,
+          fromPos,
+          toPos,
+          seg,
+          curvatureRef,
+          dragOffsetsRef
+        ) || []
+      })
+    })
+  }, [metroNetwork, dragOffsetsRef, curvatureRef])
 
-          const key = `${line.id}-${seg.fromStationId}-${seg.toStationId}`
-          if (line.renderStyle === 'linear') {
-            return (
-              <StraightLine
-                key={key}
-                id={`line-${line.id}-${seg.fromStationId}-${seg.toStationId}`}
-                line={line}
-                segment={seg}
-                fromStation={fromPos}
-                toStation={toPos}
-              />
-            )
-          }
-          if (line.renderStyle === 'circular') {
-            return (
-              <CurvedLine
-                key={key}
-                id={`line-${line.id}-${seg.fromStationId}-${seg.toStationId}`}
-                line={line}
-                fromStation={fromPos}
-                toStation={toPos}
-                curvatureRef={curvatureRef}
-                dragOffsetsRef={dragOffsetsRef}
-              />
-            )
-          }
-          if (line.renderStyle === 'diameter') {
-            return (
-              <DiameterLine
-                key={key}
-                id={`line-${line.id}-${seg.fromStationId}-${seg.toStationId}`}
-                line={line}
-                segment={seg}
-                fromStation={fromPos}
-                toStation={toPos}
-              />
-            )
-          }
-          return []
-        })
-      })}
-    </>
-  )
+  return <>{linesWithSegments}</>
 }

@@ -1,11 +1,10 @@
 import { Circle } from 'react-konva'
-import { memo, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
+import { memo, type RefObject, useCallback, useEffect, useRef } from 'react'
 import { useDispatch } from 'react-redux'
-import { updateStationPosition } from '../../../store/slices/metro-slices.ts'
+import { updateStationPosition } from '@/store/slices/metro-slices.ts'
 import type { Stage } from 'konva/lib/Stage'
-import { useMetro } from '../../../store/hooks/use-metro.ts'
+import { useMetro } from '@/store/hooks/use-metro.ts'
 
-// Вспомогательные функции
 export const getPointOnCircleEdge = (
   fromPos: { x: number; y: number },
   toPos: { x: number; y: number },
@@ -22,26 +21,31 @@ export const getPointOnCircleEdge = (
 
 interface StationProps {
   station: any
-  dragOffsetsRef: React.MutableRefObject<Record<number, { x: number; y: number }>>
-  stageRef: React.RefObject<Stage>
-  hoveredStationId: number | null
-  handleMouseEnter: (id: number) => void
-  handleMouseLeave: () => void
+  dragOffsetsRef: RefObject<Record<number, { x: number; y: number }>>
+  stageRef: RefObject<Stage> | null
   circleRadiusRef: RefObject<number>
+  isHovered: boolean
+  onMouseEnter: (id: number) => void
+  onMouseLeave: () => void
+  updateCursor: (cursor: string) => void
+  isActiveCircular: boolean
 }
+
 
 export const Station = memo(({
                                station,
                                dragOffsetsRef,
                                stageRef,
-                               hoveredStationId,
-                               handleMouseEnter,
-                               handleMouseLeave,
-                               circleRadiusRef
+                               circleRadiusRef,
+                               isHovered,
+                               onMouseEnter,
+                               onMouseLeave,
+                               updateCursor,
+                               isActiveCircular
                              }: StationProps) => {
   const dispatch = useDispatch()
-  const { metroNetwork, activeLineId } = useMetro()
-  const [isHovered, setIsHovered] = useState(false)
+  const { metroNetwork } = useMetro()
+  console.log('metroNetwork', metroNetwork)
   const circleRef = useRef<any>(null)
 
   const stationLine = metroNetwork.find(line =>
@@ -51,8 +55,6 @@ export const Station = memo(({
   const isLockedCircular =
     stationLine?.renderStyle === 'circular' &&
     stationLine.locking
-
-  const isActiveCircular = isLockedCircular && stationLine.id === activeLineId
 
   const centerRef = useRef<{ x: number; y: number } | null>(null)
   const angleRef = useRef<number | null>(null)
@@ -206,25 +208,22 @@ export const Station = memo(({
     return () => clearInterval(interval)
   }, [isActiveCircular, circleRadiusRef, updateConnectedElements])
 
-  // Drag-логика
-  const updateCursor = useCallback((cursorType: string) => {
-    const stage = stageRef.current
-    if (stage && stage.container()) {
-      stage.container().style.cursor = cursorType
-    }
-  }, [stageRef])
-
   const handleMouseEnterStation = useCallback(() => {
-    setIsHovered(true)
-    handleMouseEnter(station.id)
-    updateCursor('grab')
-  }, [handleMouseEnter, station.id, updateCursor])
+    onMouseEnter(station.id)
+  }, [onMouseEnter, station.id])
 
   const handleMouseLeaveStation = useCallback(() => {
-    setIsHovered(false)
-    handleMouseLeave()
-    updateCursor('default')
-  }, [handleMouseLeave, updateCursor])
+    onMouseLeave()
+  }, [onMouseLeave])
+
+  const handleDragStartStation = useCallback(() => {
+    if (isActiveCircular) return
+    updateCursor('grabbing')
+  }, [updateCursor, isActiveCircular])
+
+  const handleDragEndStation = useCallback(() => {
+    updateCursor(isHovered ? 'grab' : 'default')
+  }, [updateCursor, isHovered])
 
   const handleDragMove = useCallback((e: any) => {
     if (isActiveCircular) return
@@ -232,23 +231,17 @@ export const Station = memo(({
     updateConnectedElements(node.x(), node.y())
   }, [updateConnectedElements, isActiveCircular])
 
-  const handleDragStart = useCallback(() => {
-    if (isActiveCircular) return
-    updateCursor('grabbing')
-  }, [updateCursor, isActiveCircular])
-
   const handleDragEnd = useCallback((e: any) => {
     if (isActiveCircular) return
     const node = e.target
     delete dragOffsetsRef.current[station.id]
-    updateCursor(isHovered ? 'grab' : 'default')
-
+    handleDragEndStation()
     dispatch(updateStationPosition({
       stationId: station.id,
       x: node.x(),
       y: node.y()
     }))
-  }, [dispatch, station, dragOffsetsRef, isHovered, updateCursor, isActiveCircular])
+  }, [dispatch, station, dragOffsetsRef, isActiveCircular])
 
   const draggable = !isActiveCircular
 
@@ -257,18 +250,17 @@ export const Station = memo(({
       ref={circleRef}
       x={station.x}
       y={station.y}
-      radius={14}
+      radius={13}
       fill={isHovered ? station.color : 'transparent'}
       stroke={station.color}
       strokeWidth={isHovered ? 3 : 2}
-      shadowColor={isHovered ? station.color : 'rgba(0,0,0,0.2)'
-      }
+      shadowColor={isHovered ? station.color : 'rgba(0,0,0,0.2)'}
       shadowBlur={isHovered ? 10 : 5}
       shadowOpacity={isHovered ? 0.6 : 0.4}
       draggable={draggable}
       onMouseEnter={handleMouseEnterStation}
       onMouseLeave={handleMouseLeaveStation}
-      onDragStart={handleDragStart}
+      onDragStart={handleDragStartStation}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
       perfectDrawEnabled={false}
