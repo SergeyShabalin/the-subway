@@ -11,7 +11,7 @@ export const RadiusIcon: FC<IRadiusIconProps> = ({ strokeColor = '#509aea' }) =>
         height="20px"
         viewBox="0 0 24 24"
     >
-        <g fill="none" stroke={strokeColor} stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <g fill="none" stroke={strokeColor} stroke-linecap="round" stroke-linejoin="round" strokeWidth="2">
             <path d="M20.34 17.52a10 10 0 1 0-2.82 2.82"/>
             <circle cx="19" cy="19" r="2"/>
             <path d="m13.41 13.41l4.18 4.18"/>

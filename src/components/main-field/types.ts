@@ -5,7 +5,7 @@ export interface IMainFieldProps {
   freeMoving: boolean
   curvatureRef:  RefObject<Record<number, number>>
   circleRadiusRef: RefObject<number>
-
+  rotationAngleRef?: RefObject<number>
 }
 
 export interface IUseZoomingMainFieldOptions {

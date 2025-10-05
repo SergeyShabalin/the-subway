@@ -4,7 +4,7 @@ export interface IRadiusIconProps {
   strokeColor: string
 }
 
-export const RadiusIcon: FC<IRadiusIconProps> = ({
+export const ArrowIcon: FC<IRadiusIconProps> = ({
   strokeColor = '#509aea',
 }) => (
   <svg

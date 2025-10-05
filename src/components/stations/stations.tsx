@@ -9,6 +9,7 @@ export const Stations = ({
                            dragOffsetsRef,
                            stageRef,
                            circleRadiusRef,
+                           rotationAngleRef
                          }: IStationsProps) => {
   const { metroNetwork, activeLineId } = useMetro()
   const {
@@ -50,6 +51,7 @@ export const Stations = ({
             dragOffsetsRef={dragOffsetsRef}
             stageRef={stageRef}
             circleRadiusRef={circleRadiusRef}
+            rotationAngleRef={rotationAngleRef}
             isHovered={hoveredStationId === station.id}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}

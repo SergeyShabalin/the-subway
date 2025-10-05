@@ -1,6 +1,9 @@
 import { type ChangeEvent, useEffect, useState } from 'react'
 import type { ICurvatureProps } from './types.ts'
 import styles from './curvature.module.css'
+import { Range } from '@components/ui/range/range.tsx'
+import { RadiusIcon } from '@assets/radius-icon.tsx'
+import { CurvatureIcon } from '@assets/curvature-icon.tsx'
 
 const Curvature = ({ activeLineId, curvatureRef }: ICurvatureProps) => {
   const [curvatureValue, setCurvatureValue] = useState(0)
@@ -24,20 +27,15 @@ const Curvature = ({ activeLineId, curvatureRef }: ICurvatureProps) => {
   if (!activeLineId) return null
 
   return (
-    <div className={styles.wrapper}>
-      <span>Кривизна линии:</span>
-      <input
-        type="range"
-        min="-300"
-        max="300"
-        step="1"
-        value={curvatureValue}
-        onChange={handleChange}
-        className={styles.range}
-
-      />
-      <span className={styles.value} >{curvatureValue}</span>
-    </div>
+    <Range
+      onChange={handleChange}
+      value={curvatureValue}
+      placeholder="Кривизна линии"
+      icon={<CurvatureIcon strokeColor={'#1eda8c'} />}
+      min={-300}
+      max={300}
+      step={1}
+    />
   )
 }
 

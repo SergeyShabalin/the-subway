@@ -192,185 +192,20 @@ export const metroNetwork = [
     name: 'БКЛ',
     stations: [
       {
-        "id": 14,
-        "x": 734.7036661768949,
-        "y": 1568.2791088387585,
+        "id": 100001,
+        "x": 1898.007845610496,
+        "y": -351.57749061505297,
         "color": "#019caa",
-        "label": "Проспект вернадского",
+        "label": "Марьина Роща",
         "labelOffset": {
           "x": 20,
           "y": -20
         }
       },
       {
-        "id": 15,
-        "x": 1076.2525211854233,
-        "y": 1429.503110872322,
-        "color": "#019caa",
-        "label": "Новаторская",
-        "labelOffset": {
-          "x": 20,
-          "y": -20
-        }
-      },
-      {
-        "id": 16,
-        "x": 1364.5191939627562,
-        "y": 1162.0487477391941,
-        "color": "#019caa",
-        "label": "Воронцовская",
-        "labelOffset": {
-          "x": 20,
-          "y": -20
-        }
-      },
-      {
-        "id": 17,
-        "x": 1516.25846834485,
-        "y": 826.5018229182471,
-        "color": "#019caa",
-        "label": "Зюзино",
-        "labelOffset": {
-          "x": 20,
-          "y": -20
-        }
-      },
-      {
-        "id": 18,
-        "x": 1544.4693506351239,
-        "y": 462.49250271961535,
-        "color": "#019caa",
-        "label": "Каховская",
-        "labelOffset": {
-          "x": 20,
-          "y": -20
-        }
-      },
-      {
-        "id": 19,
-        "x": 1452.8685188765255,
-        "y": 104.16771580708755,
-        "color": "#019caa",
-        "label": "Варшавская",
-        "labelOffset": {
-          "x": 10,
-          "y": -30
-        }
-      },
-      {
-        "id": 20,
-        "x": 1243.7295401774388,
-        "y": -187.6175240891364,
-        "color": "#019caa",
-        "label": "Каширская",
-        "labelOffset": {
-          "x": 20,
-          "y": -20
-        }
-      },
-      {
-        "id": 21,
-        "x": 955.8009766493255,
-        "y": -391.04477295698547,
-        "color": "#019caa",
-        "label": "Кленовый бульвар",
-        "labelOffset": {
-          "x": 20,
-          "y": -20
-        }
-      },
-      {
-        "id": 22,
-        "x": 610.1963124037028,
-        "y": -488.79109728812966,
-        "color": "#019caa",
-        "label": "Нагатинский затон",
-        "labelOffset": {
-          "x": 20,
-          "y": -20
-        }
-      },
-      {
-        "id": 23,
-        "x": 259.93665567634406,
-        "y": -465.4323597424163,
-        "color": "#019caa",
-        "label": "Печатники",
-        "labelOffset": {
-          "x": 20,
-          "y": -20
-        }
-      },
-      {
-        "id": 24,
-        "x": -60.35247415562321,
-        "y": -325.03462335169525,
-        "color": "#019caa",
-        "label": "Текстильщики",
-        "labelOffset": {
-          "x": 20,
-          "y": -20
-        }
-      },
-      {
-        "id": 25,
-        "x": -321.56545589037023,
-        "y": -92.2972379310961,
-        "color": "#019caa",
-        "label": "Нижегородская",
-        "labelOffset": {
-          "x": 20,
-          "y": -20
-        }
-      },
-      {
-        "id": 31,
-        "x": -492.1428100559036,
-        "y": 227.49892057900786,
-        "color": "#019caa",
-        "label": "Авиамоторная",
-        "labelOffset": {
-          "x": 20,
-          "y": -20
-        }
-      },
-      {
-        "id": 32,
-        "x": -541.0209514327246,
-        "y": 584.0803571433294,
-        "color": "#019caa",
-        "label": "Лефортово",
-        "labelOffset": {
-          "x": 20,
-          "y": -20
-        }
-      },
-      {
-        "id": 33,
-        "x": -473.1486811738507,
-        "y": 939.5181664543791,
-        "color": "#019caa",
-        "label": "Электрозаводская",
-        "labelOffset": {
-          "x": 20,
-          "y": -20
-        }
-      },
-      {
-        "id": 34,
-        "x": -281.611329932917,
-        "y": 1247.2030287831853,
-        "color": "#019caa",
-        "label": "Сокольники",
-        "labelOffset": {
-          "x": 20,
-          "y": -20
-        }
-      },
-      {
-        "id": 35,
-        "x": 3.4733241718171257,
-        "y": 1474.1692920278144,
+        "id": 100002,
+        "x": 2197.014206791451,
+        "y": -297.7405980401993,
         "color": "#019caa",
         "label": "Рижская",
         "labelOffset": {
@@ -379,11 +214,297 @@ export const metroNetwork = [
         }
       },
       {
-        "id": 36,
-        "x": 345.41938210186777,
-        "y": 1588.3529296634144,
+        "id": 100003,
+        "x": 2477.4566249124373,
+        "y": -180.8848530070752,
         "color": "#019caa",
-        "label": "Марьина Роща",
+        "label": "Сокольники",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100004,
+        "x": 2726.2219241914772,
+        "y": -6.47430027759674,
+        "color": "#019caa",
+        "label": "Электрозаводская",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100005,
+        "x": 2931.678115717055,
+        "y": 217.3358165460121,
+        "color": "#019caa",
+        "label": "Лефортово",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100006,
+        "x": 3084.2182963215905,
+        "y": 480.08038514815814,
+        "color": "#019caa",
+        "label": "Авиамоторная",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100007,
+        "x": 3176.7098566962504,
+        "y": 769.4737615206194,
+        "color": "#019caa",
+        "label": "Нижегородская",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100008,
+        "x": 3204.8279942749014,
+        "y": 1071.9842330218555,
+        "color": "#019caa",
+        "label": "Текстильщики",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100009,
+        "x": 3167.2579361954304,
+        "y": 1373.4667462207105,
+        "color": "#019caa",
+        "label": "Печатники",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100010,
+        "x": 3065.7564166175134,
+        "y": 1659.8243138737519,
+        "color": "#019caa",
+        "label": "Нагатинский Затон",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100011,
+        "x": 2905.069533785778,
+        "y": 1917.6671743811007,
+        "color": "#019caa",
+        "label": "Кленовый Бульвар",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100012,
+        "x": 2692.7108277507923,
+        "y": 2134.938882157191,
+        "color": "#019caa",
+        "label": "Каширская",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100013,
+        "x": 2438.6099555870023,
+        "y": 2301.480053626572,
+        "color": "#019caa",
+        "label": "Варшавская",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100014,
+        "x": 2154.6483916639518,
+        "y": 2409.5034087085523,
+        "color": "#019caa",
+        "label": "Каховская",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100015,
+        "x": 1854.1038631100726,
+        "y": 2453.957895378835,
+        "color": "#019caa",
+        "label": "Зюзино",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100016,
+        "x": 1551.029498049291,
+        "y": 2432.7648712483306,
+        "color": "#019caa",
+        "label": "Воронцовская",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100017,
+        "x": 1259.5967169488856,
+        "y": 2346.9152985710275,
+        "color": "#019caa",
+        "label": "Новаторская",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100018,
+        "x": 993.43259274884,
+        "y": 2200.423407950369,
+        "color": "#019caa",
+        "label": "Проспект Вернадского",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100019,
+        "x": 764.9826640765709,
+        "y": 2000.138997377735,
+        "color": "#019caa",
+        "label": "Мичуринский проспект",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100020,
+        "x": 584.9289956929344,
+        "y": 1755.427143291367,
+        "color": "#019caa",
+        "label": "Аминьевская",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100021,
+        "x": 461.69069701627063,
+        "y": 1477.7303000106538,
+        "color": "#019caa",
+        "label": "Давыдково",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100022,
+        "x": 401.03025392316795,
+        "y": 1180.0332632895256,
+        "color": "#019caa",
+        "label": "Кунцевская",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100023,
+        "x": 405.7840813134201,
+        "y": 876.2560156985711,
+        "color": "#019caa",
+        "label": "Терехово",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100024,
+        "x": 475.7298955017586,
+        "y": 580.6028437109824,
+        "color": "#019caa",
+        "label": "Мнёвники",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100025,
+        "x": 607.597107955926,
+        "y": 306.89816105399916,
+        "color": "#019caa",
+        "label": "Народное Ополчение",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100026,
+        "x": 795.2197543814456,
+        "y": 67.9400944877566,
+        "color": "#019caa",
+        "label": "Хорошёвская",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100027,
+        "x": 1029.8248083590538,
+        "y": -125.09794237792403,
+        "color": "#019caa",
+        "label": "ЦСКА",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100028,
+        "x": 1300.4423983095467,
+        "y": -263.18970548557127,
+        "color": "#019caa",
+        "label": "Петровский парк",
+        "labelOffset": {
+          "x": 20,
+          "y": -20
+        }
+      },
+      {
+        "id": 100029,
+        "x": 1594.4187464966897,
+        "y": -339.87817747024405,
+        "color": "#019caa",
+        "label": "Савёловская",
         "labelOffset": {
           "x": 20,
           "y": -20
@@ -391,23 +512,180 @@ export const metroNetwork = [
       }
     ],
     segments: [
-      { id: '14_15', fromStationId: 14, toStationId: 15, timeMinutes: 8 },
-      { id: '15_16', fromStationId: 15, toStationId: 16, timeMinutes: 4 },
-      { id: '16_17', fromStationId: 16, toStationId: 17, timeMinutes: 5 },
-      { id: '17_18', fromStationId: 17, toStationId: 18, timeMinutes: 5 },
-      { id: '18_19', fromStationId: 18, toStationId: 19, timeMinutes: 3 },
-      { id: '19_20', fromStationId: 19, toStationId: 20, timeMinutes: 4 },
-      { id: '20_21', fromStationId: 20, toStationId: 21, timeMinutes: 2 },
-      { id: '21_22', fromStationId: 21, toStationId: 22, timeMinutes: 7 },
-      { id: '22_23', fromStationId: 22, toStationId: 23, timeMinutes: 3 },
-      { id: '23_24', fromStationId: 23, toStationId: 24, timeMinutes: 4 },
-      { id: '24_25', fromStationId: 24, toStationId: 25, timeMinutes: 6 },
-      { id: '25_31', fromStationId: 25, toStationId: 31, timeMinutes: 4 },
-      { id: '31_32', fromStationId: 31, toStationId: 32, timeMinutes: 4 },
-      { id: '32_33', fromStationId: 32, toStationId: 33, timeMinutes: 4 },
-      { id: '33_34', fromStationId: 33, toStationId: 34, timeMinutes: 4 },
-      { id: '34_35', fromStationId: 34, toStationId: 35, timeMinutes: 4 },
-      { id: '35_36', fromStationId: 35, toStationId: 36, timeMinutes: 4 },
+      {
+        "id": 200001,
+        "fromStationId": 100001,
+        "toStationId": 100002,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200002,
+        "fromStationId": 100002,
+        "toStationId": 100003,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200003,
+        "fromStationId": 100003,
+        "toStationId": 100004,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200004,
+        "fromStationId": 100004,
+        "toStationId": 100005,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200005,
+        "fromStationId": 100005,
+        "toStationId": 100006,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200006,
+        "fromStationId": 100006,
+        "toStationId": 100007,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200007,
+        "fromStationId": 100007,
+        "toStationId": 100008,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200008,
+        "fromStationId": 100008,
+        "toStationId": 100009,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200009,
+        "fromStationId": 100009,
+        "toStationId": 100010,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200010,
+        "fromStationId": 100010,
+        "toStationId": 100011,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200011,
+        "fromStationId": 100011,
+        "toStationId": 100012,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200012,
+        "fromStationId": 100012,
+        "toStationId": 100013,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200013,
+        "fromStationId": 100013,
+        "toStationId": 100014,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200014,
+        "fromStationId": 100014,
+        "toStationId": 100015,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200015,
+        "fromStationId": 100015,
+        "toStationId": 100016,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200016,
+        "fromStationId": 100016,
+        "toStationId": 100017,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200017,
+        "fromStationId": 100017,
+        "toStationId": 100018,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200018,
+        "fromStationId": 100018,
+        "toStationId": 100019,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200019,
+        "fromStationId": 100019,
+        "toStationId": 100020,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200020,
+        "fromStationId": 100020,
+        "toStationId": 100021,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200021,
+        "fromStationId": 100021,
+        "toStationId": 100022,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200022,
+        "fromStationId": 100022,
+        "toStationId": 100023,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200023,
+        "fromStationId": 100023,
+        "toStationId": 100024,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200024,
+        "fromStationId": 100024,
+        "toStationId": 100025,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200025,
+        "fromStationId": 100025,
+        "toStationId": 100026,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200026,
+        "fromStationId": 100026,
+        "toStationId": 100027,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200027,
+        "fromStationId": 100027,
+        "toStationId": 100028,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200028,
+        "fromStationId": 100028,
+        "toStationId": 100029,
+        "timeMinutes": 4
+      },
+      {
+        "id": 200029,
+        "fromStationId": 100029,
+        "toStationId": 100001,
+        "timeMinutes": 4
+      }
     ],
     isCircular: false,
     renderStyle: 'circular',

@@ -1,6 +1,10 @@
-body{
-    background: #313333;
-    overflow: hidden;
-    color: #ffffff;
-    font-family: Arial, Helvetica, sans-serif   ;
+body {
+  background: #313333;
+  overflow: hidden;
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }

@@ -134,10 +134,17 @@ const metroSlice = createSlice({
 
       if (line.renderStyle === 'circular' && line.locking) {
         // Для круговой линии - равномерное распределение по окружности
-        const centerX = stations.reduce((sum, s) => sum + s.x, 0) / stations.length
-        const centerY = stations.reduce((sum, s) => sum + s.y, 0) / stations.length
 
-        // Вычисляем средний радиус
+        // ВАЖНО: Используем геометрический центр, а не среднее арифметическое
+        const minX = Math.min(...stations.map(s => s.x))
+        const maxX = Math.max(...stations.map(s => s.x))
+        const minY = Math.min(...stations.map(s => s.y))
+        const maxY = Math.max(...stations.map(s => s.y))
+
+        const centerX = (minX + maxX) / 2
+        const centerY = (minY + maxY) / 2
+
+        // Вычисляем средний радиус от геометрического центра
         const avgRadius = stations.reduce((sum, station) => {
           const dx = station.x - centerX
           const dy = station.y - centerY

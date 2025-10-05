@@ -6,6 +6,7 @@ const App = () => {
   const [freeMoving, setFreeMoving] = useState<boolean>(false)
   const curvatureRef = useRef<Record<number, number>>({})
   const circleRadiusRef = useRef<number>(300)
+  const rotationAngleRef = useRef<number>(0)
 
   return (
     <div className="content">
@@ -13,6 +14,7 @@ const App = () => {
       <ControlPanel
         curvatureRef={curvatureRef}
         circleRadiusRef={circleRadiusRef}
+        rotationAngleRef={rotationAngleRef}
         setFreeMoving={setFreeMoving}
         freeMoving={freeMoving}
       />
@@ -20,6 +22,7 @@ const App = () => {
         freeMoving={freeMoving}
         curvatureRef={curvatureRef}
         circleRadiusRef={circleRadiusRef}
+        rotationAngleRef={rotationAngleRef}
       />
     </div>
   )

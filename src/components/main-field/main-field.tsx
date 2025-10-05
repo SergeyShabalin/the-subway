@@ -10,9 +10,11 @@ const MainField = ({
   freeMoving,
   curvatureRef,
   circleRadiusRef,
+  rotationAngleRef
 }: IMainFieldProps) => {
   const stageRef = useRef<Stage>(null)
   const dragOffsetsRef = useRef<Record<number, { x: number; y: number }>>({})
+
 
   const {
     scale,
@@ -28,6 +30,7 @@ const MainField = ({
 
   return (
     <div className={styles.container} >
+      <button onClick={()=>{console.log('stageref', stageRef)}}>stageref</button>
       <ReactStage
         width={1920}
         height={1080}
@@ -44,6 +47,7 @@ const MainField = ({
             dragOffsetsRef={dragOffsetsRef}
             stageRef={stageRef}
             circleRadiusRef={circleRadiusRef}
+            rotationAngleRef={rotationAngleRef}
           />
           <StationLabels dragOffsetsRef={dragOffsetsRef} />
         </Layer>

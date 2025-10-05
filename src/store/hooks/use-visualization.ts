@@ -1,10 +1,9 @@
 import { useSelector, useDispatch } from 'react-redux'
-import type { AppDispatch, RootState } from '../index'
+import type { AppDispatch, RootState } from '@/store'
 import {
   setCurvatureLines,
   setLineWidth,
   setStationRadius,
-  setCircleRadius,
   resetToDefaults,
 } from '../slices/visualization-slice'
 
@@ -24,17 +23,15 @@ export const useVisualization = () => {
   const showLabels = useSelector(
     (state: RootState) => state.visualization.showLabels
   )
-  const circleRadius = useSelector( // 👈 НОВЫЙ СТАТУС!
+  const circleRadius = useSelector(
     (state: RootState) => state.visualization.circleRadius
   )
 
-  // Обёртываем действия в удобные функции
   const actions = {
     setCurvatureLines: (value: number) => dispatch(setCurvatureLines(value)),
     setLineWidth: (value: number) => dispatch(setLineWidth(value)),
     setStationRadius: (value: number) => dispatch(setStationRadius(value)),
     resetToDefaults: () => dispatch(resetToDefaults()),
-    setCircleRadius: (value: number) => dispatch(setCircleRadius(value)),
   }
 
   return {

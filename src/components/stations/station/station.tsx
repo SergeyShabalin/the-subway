@@ -24,6 +24,7 @@ interface StationProps {
   dragOffsetsRef: RefObject<Record<number, { x: number; y: number }>>
   stageRef: RefObject<Stage> | null
   circleRadiusRef: RefObject<number>
+  rotationAngleRef?: RefObject<number>
   isHovered: boolean
   onMouseEnter: (id: number) => void
   onMouseLeave: () => void
@@ -31,12 +32,12 @@ interface StationProps {
   isActiveCircular: boolean
 }
 
-
 export const Station = memo(({
                                station,
                                dragOffsetsRef,
                                stageRef,
                                circleRadiusRef,
+                               rotationAngleRef = { current: 0 },
                                isHovered,
                                onMouseEnter,
                                onMouseLeave,
@@ -45,7 +46,7 @@ export const Station = memo(({
                              }: StationProps) => {
   const dispatch = useDispatch()
   const { metroNetwork } = useMetro()
-  console.log('metroNetwork', metroNetwork)
+
   const circleRef = useRef<any>(null)
 
   const stationLine = metroNetwork.find(line =>
@@ -58,6 +59,7 @@ export const Station = memo(({
 
   const centerRef = useRef<{ x: number; y: number } | null>(null)
   const angleRef = useRef<number | null>(null)
+  const originalAngleRef = useRef<number | null>(null)
 
   // Инициализация центра и угла
   useEffect(() => {
@@ -73,11 +75,12 @@ export const Station = memo(({
 
     centerRef.current = { x: centerX, y: centerY }
     angleRef.current = angle
+    originalAngleRef.current = angle // Сохраняем исходный угол
   }, [station.x, station.y, isLockedCircular, stationLine])
 
   // Обновление меток и линий при перемещении станции
   const updateConnectedElements = useCallback((newX: number, newY: number) => {
-    const stage = stageRef.current
+    const stage = stageRef?.current
     if (!stage) return
 
     // обновляем смещения
@@ -187,26 +190,30 @@ export const Station = memo(({
     circleRef.current?.getLayer()?.batchDraw()
   }, [dragOffsetsRef, stageRef, station, metroNetwork])
 
-  // Следим за изменением радиуса для круговой линии
+  // Следим за изменением радиуса И поворота для круговой линии
   useEffect(() => {
     if (!isActiveCircular || !circleRef.current) return
 
     const interval = setInterval(() => {
       const radius = circleRadiusRef.current
-      if (radius == null || !centerRef.current || !angleRef.current) return
+      const rotationAngle = rotationAngleRef.current || 0
+
+      if (radius == null || !centerRef.current || !originalAngleRef.current) return
 
       const { x: centerX, y: centerY } = centerRef.current
-      const angle = angleRef.current
 
-      const newX = centerX + radius * Math.cos(angle)
-      const newY = centerY + radius * Math.sin(angle)
+      // Применяем поворот к исходному углу
+      const rotatedAngle = originalAngleRef.current + rotationAngle
+
+      const newX = centerX + radius * Math.cos(rotatedAngle)
+      const newY = centerY + radius * Math.sin(rotatedAngle)
 
       circleRef.current.position({ x: newX, y: newY })
       updateConnectedElements(newX, newY)
     }, 16)
 
     return () => clearInterval(interval)
-  }, [isActiveCircular, circleRadiusRef, updateConnectedElements])
+  }, [isActiveCircular, circleRadiusRef, rotationAngleRef, updateConnectedElements])
 
   const handleMouseEnterStation = useCallback(() => {
     onMouseEnter(station.id)

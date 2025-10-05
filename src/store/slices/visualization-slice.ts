@@ -8,7 +8,6 @@ const initialState: VisualizationSettings = {
   lineWidth: 4,
   stationRadius: 12,
   showLabels: true,
-  circleRadius: 535 //  Радиус для кольцевых линий
 };
 
 const visualizationSlice = createSlice({
@@ -24,9 +23,7 @@ const visualizationSlice = createSlice({
     setStationRadius: (state, action: PayloadAction<number>) => {
       state.stationRadius = Math.max(5, action.payload);
     },
-    setCircleRadius: (state, action: PayloadAction<number>) => {
-      state.circleRadius = Math.max(50, action.payload)
-    },
+
     resetToDefaults: () => initialState,
   },
 });
@@ -35,7 +32,6 @@ export const {
   setCurvatureLines,
   setLineWidth,
   setStationRadius,
-  setCircleRadius,
   resetToDefaults,
 } = visualizationSlice.actions;
 
