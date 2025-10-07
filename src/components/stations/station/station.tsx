@@ -30,6 +30,10 @@ interface StationProps {
   onMouseLeave: () => void
   updateCursor: (cursor: string) => void
   isActiveCircular: boolean
+  lineMoveEnabled: boolean
+  setLineDragOffset: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>
+  activeLineId: number | null
+  canMoveCircularLine: boolean
 }
 
 export const Station = memo(({
@@ -42,12 +46,17 @@ export const Station = memo(({
                                onMouseEnter,
                                onMouseLeave,
                                updateCursor,
-                               isActiveCircular
+                               isActiveCircular,
+                               lineMoveEnabled,
+                               setLineDragOffset,
+                               activeLineId,
+                               canMoveCircularLine
                              }: StationProps) => {
   const dispatch = useDispatch()
   const { metroNetwork } = useMetro()
 
   const circleRef = useRef<any>(null)
+  const isDraggingLineRef = useRef(false)
 
   const stationLine = metroNetwork.find(line =>
     line.stations.some(s => s.id === station.id)
@@ -78,7 +87,7 @@ export const Station = memo(({
     originalAngleRef.current = angle // Сохраняем исходный угол
   }, [station.x, station.y, isLockedCircular, stationLine])
 
-  // Обновление меток и линий при перемещении станции
+  // Обновление меток и линий при перемещении станции (для индивидуального перемещения)
   const updateConnectedElements = useCallback((newX: number, newY: number) => {
     const stage = stageRef?.current
     if (!stage) return
@@ -190,6 +199,55 @@ export const Station = memo(({
     circleRef.current?.getLayer()?.batchDraw()
   }, [dragOffsetsRef, stageRef, station, metroNetwork])
 
+  // Обновление ВСЕХ станций линии при перемещении всей линии
+  const updateAllLineStations = useCallback((deltaX: number, deltaY: number) => {
+    const stage = stageRef?.current
+    if (!stage || !activeLineId) return
+
+    const line = metroNetwork.find(l => l.id === activeLineId)
+    if (!line) return
+
+    // Обновляем ВСЕ станции активной линии
+    line.stations.forEach(st => {
+      // Обновляем позицию кружка станции
+      const stationNode = stage.findOne(`#station-${st.id}`)
+      if (stationNode) {
+        stationNode.position({
+          x: st.x + deltaX,
+          y: st.y + deltaY
+        })
+      }
+
+      // Обновляем лейбл станции
+      const labelNode = stage.findOne(`#label-${st.id}`)
+      if (labelNode) {
+        labelNode.position({
+          x: st.x + (st.labelOffset?.x || 0) + deltaX,
+          y: st.y + (st.labelOffset?.y || 0) + deltaY
+        })
+      }
+    })
+
+    // Принудительно обновляем все линии активной линии
+    const lineNodes = stage.find(node => {
+      const id = node.getId?.()
+      if (!id || !id.startsWith('line-')) return false
+      const parts = id.split('-')
+      if (parts.length < 2) return false
+      const lineId = parseInt(parts[1], 10)
+      return lineId === activeLineId
+    })
+
+    // Для кривых линий устанавливаем флаг пересчета
+    lineNodes.forEach(node => {
+      if (node.getClassName && node.getClassName() === 'Path') {
+        node.attrs.forceRecalc = true
+      }
+    })
+
+    stage.batchDraw()
+  }, [stageRef, activeLineId, metroNetwork])
+
   // Следим за изменением радиуса И поворота для круговой линии
   useEffect(() => {
     if (!isActiveCircular || !circleRef.current) return
@@ -224,37 +282,98 @@ export const Station = memo(({
   }, [onMouseLeave])
 
   const handleDragStartStation = useCallback(() => {
-    if (isActiveCircular) return
-    updateCursor('grabbing')
-  }, [updateCursor, isActiveCircular])
+    if (isActiveCircular && !canMoveCircularLine) return
+
+    if ((lineMoveEnabled || canMoveCircularLine) && activeLineId) {
+      isDraggingLineRef.current = true
+      updateCursor('grabbing')
+      // Начинаем перемещение всей линии
+      const line = metroNetwork.find(l => l.id === activeLineId)
+      if (line) {
+        // Сбрасываем индивидуальные смещения при начале перемещения линии
+        line.stations.forEach(st => {
+          delete dragOffsetsRef.current[st.id]
+        })
+      }
+    } else {
+      isDraggingLineRef.current = false
+      updateCursor('grabbing')
+    }
+  }, [updateCursor, isActiveCircular, lineMoveEnabled, activeLineId, metroNetwork, canMoveCircularLine, dragOffsetsRef])
 
   const handleDragEndStation = useCallback(() => {
     updateCursor(isHovered ? 'grab' : 'default')
+    isDraggingLineRef.current = false
   }, [updateCursor, isHovered])
 
   const handleDragMove = useCallback((e: any) => {
-    if (isActiveCircular) return
+    if (isActiveCircular && !canMoveCircularLine) return
+
     const node = e.target
-    updateConnectedElements(node.x(), node.y())
-  }, [updateConnectedElements, isActiveCircular])
+    const x = node.x()
+    const y = node.y()
+
+    if ((lineMoveEnabled || canMoveCircularLine) && activeLineId && isDraggingLineRef.current) {
+      // Перемещаем всю линию в REAL-TIME
+      const deltaX = x - station.x
+      const deltaY = y - station.y
+
+      setLineDragOffset({ x: deltaX, y: deltaY })
+      updateAllLineStations(deltaX, deltaY)
+    } else {
+      // Перемещаем только текущую станцию (индивидуальное перемещение)
+      updateConnectedElements(x, y)
+    }
+  }, [isActiveCircular, lineMoveEnabled, activeLineId, station.x, station.y, updateConnectedElements, setLineDragOffset, canMoveCircularLine, updateAllLineStations])
 
   const handleDragEnd = useCallback((e: any) => {
-    if (isActiveCircular) return
-    const node = e.target
-    delete dragOffsetsRef.current[station.id]
-    handleDragEndStation()
-    dispatch(updateStationPosition({
-      stationId: station.id,
-      x: node.x(),
-      y: node.y()
-    }))
-  }, [dispatch, station, dragOffsetsRef, isActiveCircular])
+    if (isActiveCircular && !canMoveCircularLine) return
 
-  const draggable = !isActiveCircular
+    const node = e.target
+    const x = node.x()
+    const y = node.y()
+
+    if ((lineMoveEnabled || canMoveCircularLine) && activeLineId && isDraggingLineRef.current) {
+      // Завершаем перемещение всей линии
+      const line = metroNetwork.find(l => l.id === activeLineId)
+      if (line) {
+        // Применяем смещение ко всем станциям линии
+        line.stations.forEach(st => {
+          dispatch(updateStationPosition({
+            stationId: st.id,
+            x: st.x + (x - station.x),
+            y: st.y + (y - station.y)
+          }))
+        })
+        setLineDragOffset(null)
+
+        // Сбрасываем все временные смещения
+        line.stations.forEach(st => {
+          delete dragOffsetsRef.current[st.id]
+        })
+      }
+    } else {
+      // Завершаем перемещение только текущей станции
+      delete dragOffsetsRef.current[station.id]
+      dispatch(updateStationPosition({
+        stationId: station.id,
+        x: x,
+        y: y
+      }))
+    }
+
+    handleDragEndStation()
+  }, [dispatch, station, dragOffsetsRef, isActiveCircular, lineMoveEnabled, activeLineId, metroNetwork, handleDragEndStation, setLineDragOffset, canMoveCircularLine])
+
+  // Разрешаем перетаскивание если:
+  // - не активная круговая ИЛИ
+  // - активная круговая, но включен режим перемещения линии
+  const draggable = !isActiveCircular || canMoveCircularLine
 
   return (
     <Circle
       ref={circleRef}
+      id={`station-${station.id}`} // Добавляем ID для поиска
       x={station.x}
       y={station.y}
       radius={13}

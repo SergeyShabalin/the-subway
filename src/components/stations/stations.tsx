@@ -4,13 +4,19 @@ import { Station } from './station/station.tsx'
 import type { IStationsProps } from '@components/stations/types.ts'
 import { useStationCursor } from '@components/stations/station/hooks/use-change-cursor-station.ts'
 
+interface StationsProps extends IStationsProps {
+  lineMoveEnabled: boolean
+  setLineDragOffset: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>
+}
 
 export const Stations = ({
                            dragOffsetsRef,
                            stageRef,
                            circleRadiusRef,
-                           rotationAngleRef
-                         }: IStationsProps) => {
+                           rotationAngleRef,
+                           lineMoveEnabled,
+                           setLineDragOffset
+                         }: StationsProps) => {
   const { metroNetwork, activeLineId } = useMetro()
   const {
     hoveredStationId,
@@ -26,11 +32,10 @@ export const Stations = ({
 
   // Принудительное обновление stage при изменении позиций станций
   useEffect(() => {
-
     if (stageRef?.current) {
       stageRef.current.batchDraw()
     }
-  }, [stations.map(s => `${s.x}-${s.y}`).join('|')]) // Зависимость от позиций станций
+  }, [stations.map(s => `${s.x}-${s.y}`).join('|')])
 
   return (
     <>
@@ -44,6 +49,9 @@ export const Stations = ({
           stationLine?.locking &&
           stationLine.id === activeLineId
 
+        // Разрешаем перемещение кольцевой линии, если она активна и включен режим перемещения линии
+        const canMoveCircularLine = isActiveCircular && lineMoveEnabled
+
         return (
           <Station
             key={`station-${station.id}`}
@@ -56,7 +64,12 @@ export const Stations = ({
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             updateCursor={updateCursor}
-            isActiveCircular={isActiveCircular}
+            isActiveCircular={isActiveCircular && !lineMoveEnabled} // Запрещаем индивидуальное перемещение только если не включен режим перемещения линии
+            lineMoveEnabled={lineMoveEnabled}
+            setLineDragOffset={setLineDragOffset}
+            activeLineId={activeLineId}
+            canMoveCircularLine={canMoveCircularLine}
+            stationLine={stationLine} // Передаем информацию о линии станции
           />
         )
       })}

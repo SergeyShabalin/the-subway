@@ -1,83 +1,61 @@
 import { Line } from 'react-konva'
-import { useRef, useEffect } from 'react'
-import type { MetroLine, Segment, Station } from '../../types'
+import { getPointOnCircleEdge } from '@components/stations/station/station.tsx'
+
 
 interface StraightLineProps {
   id: string
-  line: MetroLine
-  segment: Segment
-  fromStation: Station
-  toStation: Station
-  radiusStation?: number
+  line: any
+  fromStation: any
+  toStation: any
+  segment: any
 }
 
-export const StraightLine = ({
-                               id,
-                               line,
-                               segment,
-                               fromStation,
-                               toStation,
-                               radiusStation = 15
-                             }: StraightLineProps) => {
-  const lineRef = useRef<any>(null)
+export const StraightLine = ({ id, line, fromStation, toStation, segment }: StraightLineProps) => {
+  // Рассчитываем точки для прямой линии с учетом радиусов станций
+  const stationRadius = 14
+  const offset = 4
 
-  const getPointOnCircleTowardsTarget = (
-    center: { x: number; y: number },
-    target: { x: number; y: number },
-    radiusStation: number
-  ) => {
-    const dx = target.x - center.x
-    const dy = target.y - center.y
-    const len = Math.sqrt(dx * dx + dy * dy)
+  // Определяем вариант смещения для параллельных линий
+  const variant = segment.variant || 'default'
 
-    let dirX = 1, dirY = 0
+  const fromEdge = getPointOnCircleEdge(fromStation, toStation, stationRadius)
+  const toEdge = getPointOnCircleEdge(toStation, fromStation, stationRadius)
 
-    if (len !== 0) {
-      dirX = dx / len
-      dirY = dy / len
-    }
+  // Вектор направления линии
+  const dx = toStation.x - fromStation.x
+  const dy = toStation.y - fromStation.y
+  const length = Math.sqrt(dx * dx + dy * dy) || 1
+  const nx = dx / length
+  const ny = dy / length
 
-    return {
-      x: center.x + dirX * radiusStation,
-      y: center.y + dirY * radiusStation
-    }
-  }
+  // Перпендикулярный вектор для смещения
+  const px = -ny
+  const py = nx
 
-  const recalcLine = () => {
-    const p1 = { x: fromStation.x, y: fromStation.y }
-    const p2 = { x: toStation.x, y: toStation.y }
+  // Применяем смещение в зависимости от варианта
+  let actualOffset = 0
+  if (variant === 'a') actualOffset = offset
+  else if (variant === 'b') actualOffset = -offset
 
-    const start = getPointOnCircleTowardsTarget(p1, p2, radiusStation)
-    const end = getPointOnCircleTowardsTarget(p2, p1, radiusStation)
-
-    return [start.x, start.y, end.x, end.y]
-  }
-
-  useEffect(() => {
-    const points = recalcLine()
-    if (lineRef.current) {
-      lineRef.current.points(points)
-      lineRef.current.getLayer()?.batchDraw()
-    }
-  }, [
-    fromStation.x,
-    fromStation.y,
-    toStation.x,
-    toStation.y,
-    radiusStation
-  ])
+  const points = [
+    fromEdge.x + px * actualOffset,
+    fromEdge.y + py * actualOffset,
+    toEdge.x + px * actualOffset,
+    toEdge.y + py * actualOffset,
+  ]
 
   return (
     <Line
       id={id}
-      ref={lineRef}
-      points={recalcLine()}
+      points={points}
       stroke={line.color}
       strokeWidth={4}
-      lineCap="square"
-      lineJoin="miter"
-      shadowColor="rgba(0,0,0,0.2)"
-      shadowBlur={5}
+      lineCap="round"
+      lineJoin="round"
+      shadowColor="rgba(0,0,0,0.3)"
+      shadowBlur={6}
+      listening={false}
+      perfectDrawEnabled={false}
     />
   )
 }

@@ -13,7 +13,7 @@ export interface IRangeProps {
 }
 
 const Range = ({ value, onChange, icon, placeholder, min, max, step }: IRangeProps) => {
-  const [isOpen, setIsOpen] = useState(false) // по умолчанию закрыто
+  const [isOpen, setIsOpen] = useState(true)
 
   const toggleOpenCloseHandler = () => {
     setIsOpen(!isOpen)

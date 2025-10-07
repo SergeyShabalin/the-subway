@@ -1,94 +1,97 @@
 .wrapper {
-    position: relative;
-    display: block;
-    margin: 10px 0;
+  position: relative;
+  display: block;
+  margin: 10px 0;
 }
 
 .placeholder {
-    display: flex;
-    justify-content: space-between;
-    background-color: #2a2c2a;
-    padding: 10px;
-    margin: 0;
-    border-radius: 6px;
-    font-size: 14px;
-    color: #9f9999;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: 1px solid transparent;
+  display: flex;
+  justify-content: space-between;
+  background-color: #2a2c2a;
+  padding: 10px;
+  margin: 0;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #9f9999;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
 }
 
-
 .placeholderActive {
-    border-radius: 6px 6px 0 0;
+  border-radius: 6px 6px 0 0;
 }
 
 .combo {
-    overflow: hidden;
-    transition: height 0.4s ease;
-    height: 0;
+  overflow: hidden;
+  transition: height 0.4s ease;
+  height: 0;
 }
 
 .comboOpen {
-    height: 50px; /* Подстройте под ваш контент */
-    border-radius:0 0 6px 6px ;
-
+  height: 50px;
+  border-radius: 0 0 6px 6px;
 }
 
 .comboContent {
-    background-color: #2a2c2a;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 10px;
-    min-height: 10px; /* Соответствует высоте открытого состояния */
-    transition: all 0.4s ease-in-out;
+  background-color: #2a2c2a;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 10px;
+  min-height: 10px;
+  transition: all 0.4s ease-in-out;
 }
 
 .input {
-    width: 80%;
-    opacity: 0;
-    transform: translateY(-5px);
-    transition: opacity 0.3s ease 0.1s, transform 0.3s ease 0.1s;
+  width: 80%;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition:
+    opacity 0.3s ease 0.1s,
+    transform 0.3s ease 0.1s;
 }
 
 .value {
-    font-size: 14px;
-    color: #9f9999;
-    min-width: 10%;
-    white-space: nowrap;
-    text-align: right;
-    opacity: 0;
-    transform: translateY(-5px);
-    transition: opacity 0.3s ease 0.3s, transform 0.3s ease 0.3s;
+  font-size: 14px;
+  color: #9f9999;
+  min-width: 10%;
+  white-space: nowrap;
+  text-align: right;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition:
+    opacity 0.3s ease 0.3s,
+    transform 0.3s ease 0.3s;
 }
 
 .icon {
-    width: 10%;
-    text-align: center;
-    opacity: 0;
-    transform: translateY(-5px);
-    transition: opacity 0.3s ease 0.1s, transform 0.3s ease 0.1s;
+  width: 10%;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition:
+    opacity 0.3s ease 0.1s,
+    transform 0.3s ease 0.1s;
 }
 
-/* Показываем элементы при открытии */
 .comboOpen .input,
 .comboOpen .value,
 .comboOpen .icon {
-    opacity: 1;
-    transform: translateY(0);
+  opacity: 1;
+  transform: translateY(0);
 }
 
-.arrow, .arrowOpen{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-   transition: ease-in-out transform 0.4s;
-
+.arrow,
+.arrowOpen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: ease-in-out transform 0.4s;
 }
-.arrow{
-    transform:  scale(0.6) perspective(90px) rotate(90deg) rotateX(-180deg);
+.arrow {
+  transform: scale(0.6) perspective(90px) rotate(90deg) rotateX(-180deg);
 }
-.arrowOpen{
-    transform: scale(0.6)  rotate(270deg);
+.arrowOpen {
+  transform: scale(0.6) rotate(270deg);
 }

@@ -1,3 +1,4 @@
+// ControlPanel.tsx
 import { Sidebar } from '../ui'
 import { useVisualization } from '@/store/hooks/use-visualization.ts'
 import { useMetro } from '@/store/hooks/use-metro.ts'
@@ -14,8 +15,10 @@ const ControlPanel = ({
                         circleRadiusRef,
                         setFreeMoving,
                         freeMoving,
-                        rotationAngleRef
-                      }: IControlPanelProps) => {
+                        rotationAngleRef,
+                        setLineMoveEnabled,
+                        lineMoveEnabled
+                      }: IControlPanelProps & { setLineMoveEnabled: React.Dispatch<React.SetStateAction<boolean>>, lineMoveEnabled: boolean }) => {
   const { circleRadius: storeCircleRadius } = useVisualization()
   const { metroNetwork, activeLineId, actions: metroActions } = useMetro()
 
@@ -23,25 +26,18 @@ const ControlPanel = ({
   const isRadiusInitializedRef = useRef(false)
   const [radiusValue, setRadiusValue] = useState(300) // Начальное значение по умолчанию
   const [rotationAngle, setRotationAngle] = useState(0)
-  const [lineMoveEnabled, setLineMoveEnabled] = useState(false)
-
-  // Получаем активную линию
-  const activeLine = activeLineId
-    ? metroNetwork.find(line => line.id === activeLineId)
-    : null
 
   // Проверяем, является ли активная линия круговой
-  const isActiveLineCircular = activeLine?.renderStyle === 'circular'
+  const isActiveLineCircular = activeLineId
+    ? metroNetwork.some(line => line.id === activeLineId && line.renderStyle === 'circular')
+    : false
 
   // Инициализация значения радиуса только при первом выборе круговой линии
   useEffect(() => {
     if (isActiveLineCircular && !isRadiusInitializedRef.current) {
-      // Устанавливаем значение из store только если еще не инициализировали
-      // circleRadiusRef.current = storeCircleRadius
-      // setRadiusValue(storeCircleRadius)
       isRadiusInitializedRef.current = true
     }
-  }, [isActiveLineCircular, storeCircleRadius, circleRadiusRef])
+  }, [isActiveLineCircular])
 
   const handleRadiusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newRadius = Number(e.target.value)
@@ -70,9 +66,6 @@ const ControlPanel = ({
     // Сбрасываем угол поворота при смене линии
     setRotationAngle(0)
     rotationAngleRef.current = 0
-
-    // НЕ сбрасываем флаг инициализации радиуса при смене линии
-    // чтобы сохранить текущее значение радиуса
   }
 
   const handleLineMoveToggle = () => {
@@ -116,7 +109,7 @@ const ControlPanel = ({
             options={metroNetwork
               .map((line) => ({
                 value: line.id,
-                label: `${line.name} ${line.renderStyle === 'circular' ? '(кольцевая)' : '(линейная)'}`,
+                label: `${line.name} ${line.renderStyle === 'circular' && '(кольцевая)' }`,
                 color: line.color
               }))
             }
@@ -140,24 +133,24 @@ const ControlPanel = ({
           </div>
 
           {/* Перемещение всей линии */}
-          {/*{activeLineId && (*/}
-          {/*  <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: '#333335', borderRadius: '4px' }}>*/}
-          {/*    <label style={{ display: 'flex', alignItems: 'center', color: 'white' }}>*/}
-          {/*      <input*/}
-          {/*        type="checkbox"*/}
-          {/*        checked={lineMoveEnabled}*/}
-          {/*        onChange={handleLineMoveToggle}*/}
-          {/*        style={{ marginRight: '8px' }}*/}
-          {/*      />*/}
-          {/*      Режим перемещения всей линии*/}
-          {/*    </label>*/}
-          {/*    {lineMoveEnabled && (*/}
-          {/*      <div style={{ marginTop: '8px', fontSize: '12px', color: '#ccc' }}>*/}
-          {/*        Перетащите линию для перемещения (все станции и сегменты)*/}
-          {/*      </div>*/}
-          {/*    )}*/}
-          {/*  </div>*/}
-          {/*)}*/}
+          {activeLineId && (
+            <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: '#333335', borderRadius: '4px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', color: 'white' }}>
+                <input
+                  type="checkbox"
+                  checked={lineMoveEnabled}
+                  onChange={handleLineMoveToggle}
+                  style={{ marginRight: '8px' }}
+                />
+                Режим перемещения всей линии
+              </label>
+              {lineMoveEnabled && (
+                <div style={{ marginTop: '8px', fontSize: '12px', color: '#ccc' }}>
+                  Перетащите любую станцию для перемещения всей линии
+                </div>
+              )}
+            </div>
+          )}
           {/* Радиус кольцевой ветки - ТОЛЬКО для круговых линий */}
           {isActiveLineCircular && (
             <Range
@@ -225,7 +218,6 @@ const ControlPanel = ({
               🎯 Выровнять расстояние между станциями
             </button>
           )}
-
 
         </div>
       </Sidebar>

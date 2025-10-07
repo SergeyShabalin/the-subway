@@ -1,5 +1,6 @@
+// MainField.tsx
 import { Layer, Stage as ReactStage } from 'react-konva'
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useInteractiveStage } from './hooks/use-interactive-stage.ts'
 import type { Stage } from 'konva/lib/Stage'
 import { Stations, Lines, StationLabels } from '@/components'
@@ -7,14 +8,15 @@ import type { IMainFieldProps } from '@components/main-field/types.ts'
 import styles from './main-field.module.css'
 
 const MainField = ({
-  freeMoving,
-  curvatureRef,
-  circleRadiusRef,
-  rotationAngleRef
-}: IMainFieldProps) => {
+                     freeMoving,
+                     lineMoveEnabled,
+                     curvatureRef,
+                     circleRadiusRef,
+                     rotationAngleRef
+                   }: IMainFieldProps & { lineMoveEnabled: boolean }) => {
   const stageRef = useRef<Stage>(null)
   const dragOffsetsRef = useRef<Record<number, { x: number; y: number }>>({})
-
+  const [lineDragOffset, setLineDragOffset] = useState<{ x: number; y: number } | null>(null)
 
   const {
     scale,
@@ -27,6 +29,13 @@ const MainField = ({
     stageRef,
     canMove: freeMoving,
   })
+
+  // Принудительное обновление при изменении смещения линии
+  useEffect(() => {
+    if (stageRef.current) {
+      stageRef.current.batchDraw()
+    }
+  }, [lineDragOffset])
 
   return (
     <div className={styles.container} >
@@ -42,14 +51,23 @@ const MainField = ({
         draggable={false}
       >
         <Layer x={position.x} y={position.y} scaleX={scale} scaleY={scale}>
-          <Lines dragOffsetsRef={dragOffsetsRef} curvatureRef={curvatureRef} />
+          <Lines
+            dragOffsetsRef={dragOffsetsRef}
+            curvatureRef={curvatureRef}
+            lineDragOffset={lineDragOffset}
+          />
           <Stations
             dragOffsetsRef={dragOffsetsRef}
             stageRef={stageRef}
             circleRadiusRef={circleRadiusRef}
             rotationAngleRef={rotationAngleRef}
+            lineMoveEnabled={lineMoveEnabled}
+            setLineDragOffset={setLineDragOffset}
           />
-          <StationLabels dragOffsetsRef={dragOffsetsRef} />
+          <StationLabels
+            dragOffsetsRef={dragOffsetsRef}
+            lineDragOffset={lineDragOffset}
+          />
         </Layer>
       </ReactStage>
     </div>

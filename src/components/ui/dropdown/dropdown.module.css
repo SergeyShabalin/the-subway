@@ -45,7 +45,7 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Стиль для hover с цветом линии */
+
 .dropdownToggle.hovered:hover:not(:disabled) {
     transition: all 0.3s ease;
 }
