@@ -30,12 +30,12 @@ export const StationLabels = ({ dragOffsetsRef, lineDragOffset }: StationLabelsP
               x={station.x + (station.labelOffset?.x || 0) + effectiveOffset.x}
               y={station.y + (station.labelOffset?.y || 0) + effectiveOffset.y}
               text={station.label}
-              fontSize={14}
+              fontSize={12}
               fill={isDragged ? "#FFFFFF" : "#9CEEF7"}
               align="center"
               verticalAlign="middle"
               letterSpacing={1.2}
-              draggable={false}
+              draggable={true}
             />
           )
         })

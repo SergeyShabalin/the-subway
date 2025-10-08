@@ -125,7 +125,7 @@ const ControlPanel = ({
             options={metroNetwork
               .map((line) => ({
                 value: line.id,
-                label: `${line.name} ${line.renderStyle === 'circular' && '(кольцевая)' }`,
+                label: `${line.name} ${line.renderStyle === 'circular' ? '(кольцевая)' : '' }`,
                 color: line.color
               }))
             }
