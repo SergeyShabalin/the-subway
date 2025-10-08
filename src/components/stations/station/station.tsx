@@ -70,6 +70,10 @@ export const Station = memo(({
   const angleRef = useRef<number | null>(null)
   const originalAngleRef = useRef<number | null>(null)
 
+  // Флаги для отслеживания применения изменений
+  const isRadiusAppliedRef = useRef(false)
+  const isRotationAppliedRef = useRef(false)
+
   // Инициализация центра и угла
   useEffect(() => {
     if (!isLockedCircular) return
@@ -256,6 +260,10 @@ export const Station = memo(({
       const radius = circleRadiusRef.current
       const rotationAngle = rotationAngleRef.current || 0
 
+      // Применяем изменения если:
+      // 1. Радиус отличается от исходного ИЛИ
+      // 2. Есть поворот ИЛИ
+      // 3. Радиус был явно применен через ползунок
       if (radius == null || !centerRef.current || !originalAngleRef.current) return
 
       const { x: centerX, y: centerY } = centerRef.current
@@ -271,7 +279,7 @@ export const Station = memo(({
     }, 16)
 
     return () => clearInterval(interval)
-  }, [isActiveCircular, circleRadiusRef, rotationAngleRef, updateConnectedElements])
+  }, [isActiveCircular, circleRadiusRef.current, rotationAngleRef.current, updateConnectedElements])
 
   const handleMouseEnterStation = useCallback(() => {
     onMouseEnter(station.id)

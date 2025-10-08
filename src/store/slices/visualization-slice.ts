@@ -8,6 +8,7 @@ const initialState: VisualizationSettings = {
   lineWidth: 4,
   stationRadius: 12,
   showLabels: true,
+  // УДАЛЕНО: circleRadius больше не хранится в store
 };
 
 const visualizationSlice = createSlice({

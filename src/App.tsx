@@ -7,7 +7,7 @@ const App = () => {
   const [freeMoving, setFreeMoving] = useState<boolean>(false)
   const [lineMoveEnabled, setLineMoveEnabled] = useState<boolean>(false)
   const curvatureRef = useRef<Record<number, number>>({})
-  const circleRadiusRef = useRef<number>(300)
+  const circleRadiusRef = useRef<number>(300) // Начальное значение, будет переопределено при выборе линии
   const rotationAngleRef = useRef<number>(0)
 
   return (

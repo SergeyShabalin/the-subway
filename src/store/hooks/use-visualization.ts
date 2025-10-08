@@ -10,7 +10,6 @@ import {
 export const useVisualization = () => {
   const dispatch = useDispatch<AppDispatch>()
 
-
   const curvatureLines = useSelector(
     (state: RootState) => state.visualization.curvatureLines
   )
@@ -23,9 +22,7 @@ export const useVisualization = () => {
   const showLabels = useSelector(
     (state: RootState) => state.visualization.showLabels
   )
-  const circleRadius = useSelector(
-    (state: RootState) => state.visualization.circleRadius
-  )
+  // УДАЛЕНО: circleRadius больше не используется из store
 
   const actions = {
     setCurvatureLines: (value: number) => dispatch(setCurvatureLines(value)),
@@ -40,6 +37,6 @@ export const useVisualization = () => {
     stationRadius,
     showLabels,
     actions,
-    circleRadius,
+
   }
 }

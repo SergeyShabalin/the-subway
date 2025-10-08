@@ -19,12 +19,9 @@ const ControlPanel = ({
                         setLineMoveEnabled,
                         lineMoveEnabled
                       }: IControlPanelProps & { setLineMoveEnabled: React.Dispatch<React.SetStateAction<boolean>>, lineMoveEnabled: boolean }) => {
-  const { circleRadius: storeCircleRadius } = useVisualization()
   const { metroNetwork, activeLineId, actions: metroActions } = useMetro()
 
-  // Используем ref для отслеживания, был ли уже инициализирован радиус
-  const isRadiusInitializedRef = useRef(false)
-  const [radiusValue, setRadiusValue] = useState(300) // Начальное значение по умолчанию
+  const [radiusValue, setRadiusValue] = useState(300) // Временное значение, будет пересчитано
   const [rotationAngle, setRotationAngle] = useState(0)
 
   // Проверяем, является ли активная линия круговой
@@ -32,12 +29,29 @@ const ControlPanel = ({
     ? metroNetwork.some(line => line.id === activeLineId && line.renderStyle === 'circular')
     : false
 
-  // Инициализация значения радиуса только при первом выборе круговой линии
+  // Вычисляем фактический радиус из текущих позиций станций при выборе круговой линии
   useEffect(() => {
-    if (isActiveLineCircular && !isRadiusInitializedRef.current) {
-      isRadiusInitializedRef.current = true
+    if (isActiveLineCircular && activeLineId) {
+      const activeLine = metroNetwork.find(line => line.id === activeLineId)
+      if (activeLine && activeLine.stations.length > 0) {
+        // Вычисляем центр линии
+        const centerX = activeLine.stations.reduce((sum, s) => sum + s.x, 0) / activeLine.stations.length
+        const centerY = activeLine.stations.reduce((sum, s) => sum + s.y, 0) / activeLine.stations.length
+
+        // Вычисляем средний радиус
+        const avgRadius = activeLine.stations.reduce((sum, station) => {
+          const dx = station.x - centerX
+          const dy = station.y - centerY
+          return sum + Math.sqrt(dx * dx + dy * dy)
+        }, 0) / activeLine.stations.length
+
+        // Округляем до целого и устанавливаем значения
+        const calculatedRadius = Math.round(avgRadius)
+        setRadiusValue(calculatedRadius)
+        circleRadiusRef.current = calculatedRadius
+      }
     }
-  }, [isActiveLineCircular])
+  }, [isActiveLineCircular, activeLineId, metroNetwork])
 
   const handleRadiusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newRadius = Number(e.target.value)
@@ -66,6 +80,8 @@ const ControlPanel = ({
     // Сбрасываем угол поворота при смене линии
     setRotationAngle(0)
     rotationAngleRef.current = 0
+
+    // НЕ меняем радиус при смене линии - он будет вычислен автоматически
   }
 
   const handleLineMoveToggle = () => {
