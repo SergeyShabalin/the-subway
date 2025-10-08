@@ -1,27 +1,41 @@
 import { type ChangeEvent, useEffect, useState } from 'react'
 import type { ICurvatureProps } from './types.ts'
-import styles from './curvature.module.css'
 import { Range } from '@components/ui/range/range.tsx'
-import { RadiusIcon } from '@assets/radius-icon.tsx'
 import { CurvatureIcon } from '@assets/curvature-icon.tsx'
+import { useMetro } from '@/store/hooks/use-metro.ts'
 
 const Curvature = ({ activeLineId, curvatureRef }: ICurvatureProps) => {
-  const [curvatureValue, setCurvatureValue] = useState(0)
+  const { metroNetwork, actions: metroActions } = useMetro()
+  const [curvatureValue, setCurvatureValue] = useState(50)
 
+  // Находим активную линию
+  const activeLine = activeLineId
+    ? metroNetwork.find(line => line.id === activeLineId)
+    : null
+
+  // Инициализируем кривизну из данных линии при выборе
   useEffect(() => {
-    if (activeLineId !== null && curvatureRef?.current) {
-      const currentCurvature =
-        curvatureRef.current[activeLineId as number] ?? 50
-      setCurvatureValue(currentCurvature)
+    if (activeLineId && activeLine) {
+      // Берем кривизну из данных линии или используем значение по умолчанию
+      const lineCurvature = activeLine.curvatureLines ?? 50
+      setCurvatureValue(lineCurvature)
+
+      // Обновляем ref
+      curvatureRef.current[activeLineId] = lineCurvature
     }
-  }, [activeLineId, curvatureRef])
+  }, [activeLineId, activeLine, curvatureRef])
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (!activeLineId) return
+
     const newCurvature = Number(e.target.value)
     setCurvatureValue(newCurvature)
 
-    if (activeLineId === null || !curvatureRef?.current) return
-    curvatureRef.current[activeLineId as number] = newCurvature
+    // Обновляем ref для мгновенного отображения
+    curvatureRef.current[activeLineId] = newCurvature
+
+    // Сохраняем в store для персистентности
+    metroActions.updateLineCurvature(activeLineId, newCurvature)
   }
 
   if (!activeLineId) return null
