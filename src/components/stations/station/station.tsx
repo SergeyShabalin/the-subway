@@ -1,5 +1,6 @@
+// Station.tsx
 import { Circle } from 'react-konva'
-import { memo, type RefObject, useCallback, useEffect, useRef } from 'react'
+import { memo, type RefObject, useCallback, useEffect, useRef, useMemo } from 'react'
 import { useDispatch } from 'react-redux'
 import { updateStationPosition } from '@/store/slices/metro-slices.ts'
 import type { Stage } from 'konva/lib/Stage'
@@ -19,6 +20,82 @@ export const getPointOnCircleEdge = (
   return { x: fromPos.x + nx * radius, y: fromPos.y + ny * radius }
 }
 
+// Оптимизированная функция для расчета направлений линий
+const useStationGradient = (station: any) => {
+  const { metroNetwork } = useMetro()
+
+  return useMemo(() => {
+    // Находим все линии, к которым принадлежит станция
+    const stationLines = metroNetwork.filter(line =>
+      line.stations.some((s: any) => s.id === station.id)
+    )
+
+    // Если станция не пересадочная, возвращаем null
+    if (stationLines.length <= 1) return null
+
+    const directionsByColor = new Map<string, { angles: number[]; color: string }>()
+
+    // Ограничиваем поиск только линиями, к которым принадлежит станция
+    stationLines.forEach(line => {
+      line.segments.forEach((segment: any) => {
+        if (segment.fromStationId === station.id || segment.toStationId === station.id) {
+          const otherStationId = segment.fromStationId === station.id ? segment.toStationId : segment.fromStationId
+          const otherStation = line.stations.find((s: any) => s.id === otherStationId)
+
+          if (otherStation) {
+            const dx = otherStation.x - station.x
+            const dy = otherStation.y - station.y
+            const angle = Math.atan2(dy, dx) * (180 / Math.PI)
+
+            if (!directionsByColor.has(line.color)) {
+              directionsByColor.set(line.color, { angles: [], color: line.color })
+            }
+            directionsByColor.get(line.color)!.angles.push(angle)
+          }
+        }
+      })
+    })
+
+    const directions: { angle: number; color: string }[] = []
+
+    directionsByColor.forEach((value, color) => {
+      if (value.angles.length > 0) {
+        let sumSin = 0
+        let sumCos = 0
+
+        value.angles.forEach(angle => {
+          const rad = angle * Math.PI / 180
+          sumSin += Math.sin(rad)
+          sumCos += Math.cos(rad)
+        })
+
+        const avgAngle = Math.atan2(sumSin / value.angles.length, sumCos / value.angles.length) * (180 / Math.PI)
+        directions.push({ angle: avgAngle, color })
+      }
+    })
+
+    if (directions.length > 1) {
+      const sortedDirections = [...directions].sort((a, b) => a.angle - b.angle)
+      const startAngle = sortedDirections[0].angle
+      const endAngle = sortedDirections[sortedDirections.length - 1].angle
+
+      return {
+        type: 'linear' as const,
+        startAngle,
+        endAngle,
+        colors: sortedDirections.map(d => d.color)
+      }
+    } else if (stationLines.length > 1) {
+      return {
+        type: 'radial' as const,
+        colors: stationLines.map(line => line.color)
+      }
+    }
+
+    return null
+  }, [station.id, station.x, station.y, metroNetwork])
+}
+
 interface StationProps {
   station: any
   dragOffsetsRef: RefObject<Record<number, { x: number; y: number }>>
@@ -34,6 +111,7 @@ interface StationProps {
   setLineDragOffset: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>
   activeLineId: number | null
   canMoveCircularLine: boolean
+  stationLine?: any
 }
 
 export const Station = memo(({
@@ -50,7 +128,8 @@ export const Station = memo(({
                                lineMoveEnabled,
                                setLineDragOffset,
                                activeLineId,
-                               canMoveCircularLine
+                               canMoveCircularLine,
+                               stationLine
                              }: StationProps) => {
   const dispatch = useDispatch()
   const { metroNetwork } = useMetro()
@@ -58,50 +137,137 @@ export const Station = memo(({
   const circleRef = useRef<any>(null)
   const isDraggingLineRef = useRef(false)
 
-  const stationLine = metroNetwork.find(line =>
-    line.stations.some(s => s.id === station.id)
-  )
-
-  const isLockedCircular =
-    stationLine?.renderStyle === 'circular' &&
-    stationLine.locking
-
   const centerRef = useRef<{ x: number; y: number } | null>(null)
   const angleRef = useRef<number | null>(null)
   const originalAngleRef = useRef<number | null>(null)
 
-  // Флаги для отслеживания применения изменений
-  const isRadiusAppliedRef = useRef(false)
-  const isRotationAppliedRef = useRef(false)
+  // Находим все линии, к которым принадлежит станция
+  const stationLines = useMemo(() => {
+    return metroNetwork.filter(line =>
+      line.stations.some((s: any) => s.id === station.id)
+    )
+  }, [metroNetwork, station.id])
 
-  // Инициализация центра и угла
-  useEffect(() => {
-    if (!isLockedCircular) return
+  // Определяем, является ли станция частью активной круговой линии
+  const isPartOfActiveCircularLine = useMemo(() => {
+    if (!activeLineId) return false
+    const activeLine = metroNetwork.find(line => line.id === activeLineId)
+    return activeLine?.renderStyle === 'circular' &&
+      activeLine?.locking &&
+      activeLine.stations.some(s => s.id === station.id)
+  }, [activeLineId, metroNetwork, station.id])
 
-    const stations = stationLine!.stations
-    const centerX = stations.reduce((sum, s) => sum + s.x, 0) / stations.length
-    const centerY = stations.reduce((sum, s) => sum + s.y, 0) / stations.length
+  // Используем оптимизированный хук для градиента
+  const stationGradient = useStationGradient(station)
 
-    const dx = station.x - centerX
-    const dy = station.y - centerY
-    const angle = Math.atan2(dy, dx)
+  // Применение градиента к кругу (переприменяем при изменении позиции)
+  const applyGradient = useCallback(() => {
+    if (!circleRef.current || !stationGradient) return;
 
-    centerRef.current = { x: centerX, y: centerY }
-    angleRef.current = angle
-    originalAngleRef.current = angle // Сохраняем исходный угол
-  }, [station.x, station.y, isLockedCircular, stationLine])
+    const circle = circleRef.current;
 
-  // Обновление меток и линий при перемещении станции (для индивидуального перемещения)
+    if (stationGradient.type === 'linear') {
+      const { startAngle, endAngle, colors } = stationGradient;
+
+      const startX = Math.cos(startAngle * Math.PI / 180);
+      const startY = Math.sin(startAngle * Math.PI / 180);
+      const endX = Math.cos(endAngle * Math.PI / 180);
+      const endY = Math.sin(endAngle * Math.PI / 180);
+
+      circle.strokeLinearGradientStartPoint({
+        x: startX * 14,
+        y: startY * 14
+      });
+      circle.strokeLinearGradientEndPoint({
+        x: endX * 14,
+        y: endY * 14
+      });
+
+      const colorStops: any[] = [];
+      const angleRange = endAngle - startAngle;
+
+      colors.forEach((color, index) => {
+        const position = angleRange > 0 ? (index / (colors.length - 1)) : 0.5;
+        colorStops.push(position, color);
+      });
+
+      circle.strokeLinearGradientColorStops(colorStops);
+    } else if (stationGradient.type === 'radial') {
+      const { colors } = stationGradient;
+
+      circle.strokeRadialGradientStartPoint({ x: 0, y: 0 });
+      circle.strokeRadialGradientStartRadius(0);
+      circle.strokeRadialGradientEndPoint({ x: 0, y: 0 });
+      circle.strokeRadialGradientEndRadius(14);
+
+      const radialColorStops: any[] = [];
+      const segmentCount = colors.length;
+
+      colors.forEach((color, index) => {
+        const startPosition = index / segmentCount;
+        const endPosition = (index + 1) / segmentCount;
+        radialColorStops.push(startPosition, color);
+        radialColorStops.push(endPosition, color);
+      });
+
+      circle.strokeRadialGradientColorStops(radialColorStops);
+    }
+  }, [stationGradient]);
+
+  // Обновление ВСЕХ станций линии при перемещении всей линии
+  const updateAllLineStations = useCallback((deltaX: number, deltaY: number) => {
+    const stage = stageRef?.current
+    if (!stage || !activeLineId) return
+
+    const line = metroNetwork.find(l => l.id === activeLineId)
+    if (!line) return
+
+    line.stations.forEach(st => {
+      const stationNode = stage.findOne(`#station-${st.id}`)
+      if (stationNode) {
+        stationNode.position({
+          x: st.x + deltaX,
+          y: st.y + deltaY
+        })
+      }
+
+      const labelNode = stage.findOne(`#label-${st.id}`)
+      if (labelNode) {
+        labelNode.position({
+          x: st.x + (st.labelOffset?.x || 0) + deltaX,
+          y: st.y + (st.labelOffset?.y || 0) + deltaY
+        })
+      }
+    })
+
+    const lineNodes = stage.find(node => {
+      const id = node.getId?.()
+      if (!id || !id.startsWith('line-')) return false
+      const parts = id.split('-')
+      if (parts.length < 2) return false
+      const lineId = parseInt(parts[1], 10)
+      return lineId === activeLineId
+    })
+
+    lineNodes.forEach(node => {
+      if (node.getClassName && node.getClassName() === 'Path') {
+        node.attrs.forceRecalc = true
+      }
+    })
+
+    stage.batchDraw()
+  }, [stageRef, activeLineId, metroNetwork])
+
+  // Обновление меток и линий при перемещении станции
   const updateConnectedElements = useCallback((newX: number, newY: number) => {
     const stage = stageRef?.current
     if (!stage) return
 
-    // обновляем смещения
     const dx = newX - station.x
     const dy = newY - station.y
     dragOffsetsRef.current[station.id] = { x: dx, y: dy }
 
-    // обновляем лейбл
+    // Обновляем лейбл
     const labelNode = stage.findOne(`#label-${station.id}`)
     if (labelNode) {
       labelNode.position({
@@ -110,7 +276,7 @@ export const Station = memo(({
       })
     }
 
-    // обновляем линии
+    // Обновляем линии
     const lineNodes = stage.find(node => {
       const id = node.getId?.()
       if (!id || !id.startsWith('line-')) return false
@@ -123,7 +289,6 @@ export const Station = memo(({
 
     lineNodes.forEach(node => {
       if (node.getClassName && node.getClassName() === 'Line') {
-        // прямые линии
         const line = node as any
         const parts = line.getId().split('-')
         const fromId = parseInt(parts[2], 10)
@@ -162,7 +327,6 @@ export const Station = memo(({
 
         line.points(points)
       } else if (node.getClassName && node.getClassName() === 'Path') {
-        // кривые линии
         const orig = node.attrs.originalCoords
         if (!orig) return
 
@@ -203,83 +367,57 @@ export const Station = memo(({
     circleRef.current?.getLayer()?.batchDraw()
   }, [dragOffsetsRef, stageRef, station, metroNetwork])
 
-  // Обновление ВСЕХ станций линии при перемещении всей линии
-  const updateAllLineStations = useCallback((deltaX: number, deltaY: number) => {
-    const stage = stageRef?.current
-    if (!stage || !activeLineId) return
-
-    const line = metroNetwork.find(l => l.id === activeLineId)
-    if (!line) return
-
-    // Обновляем ВСЕ станции активной линии
-    line.stations.forEach(st => {
-      // Обновляем позицию кружка станции
-      const stationNode = stage.findOne(`#station-${st.id}`)
-      if (stationNode) {
-        stationNode.position({
-          x: st.x + deltaX,
-          y: st.y + deltaY
-        })
-      }
-
-      // Обновляем лейбл станции
-      const labelNode = stage.findOne(`#label-${st.id}`)
-      if (labelNode) {
-        labelNode.position({
-          x: st.x + (st.labelOffset?.x || 0) + deltaX,
-          y: st.y + (st.labelOffset?.y || 0) + deltaY
-        })
-      }
-    })
-
-    // Принудительно обновляем все линии активной линии
-    const lineNodes = stage.find(node => {
-      const id = node.getId?.()
-      if (!id || !id.startsWith('line-')) return false
-      const parts = id.split('-')
-      if (parts.length < 2) return false
-      const lineId = parseInt(parts[1], 10)
-      return lineId === activeLineId
-    })
-
-    // Для кривых линий устанавливаем флаг пересчета
-    lineNodes.forEach(node => {
-      if (node.getClassName && node.getClassName() === 'Path') {
-        node.attrs.forceRecalc = true
-      }
-    })
-
-    stage.batchDraw()
-  }, [stageRef, activeLineId, metroNetwork])
-
-  // Следим за изменением радиуса И поворота для круговой линии
+  // Применяем градиент при монтировании и при изменении позиции
   useEffect(() => {
-    if (!isActiveCircular || !circleRef.current) return
+    applyGradient();
+  }, [applyGradient, station.x, station.y]);
 
-    const interval = setInterval(() => {
+  // Инициализация центра и угла для круговых линий
+  useEffect(() => {
+    if (!isPartOfActiveCircularLine) return
+
+    const activeLine = metroNetwork.find(line => line.id === activeLineId)
+    if (!activeLine) return
+
+    const stations = activeLine.stations
+    const centerX = stations.reduce((sum, s) => sum + s.x, 0) / stations.length
+    const centerY = stations.reduce((sum, s) => sum + s.y, 0) / stations.length
+
+    const dx = station.x - centerX
+    const dy = station.y - centerY
+    const angle = Math.atan2(dy, dx)
+
+    centerRef.current = { x: centerX, y: centerY }
+    angleRef.current = angle
+    originalAngleRef.current = angle
+  }, [station.x, station.y, isPartOfActiveCircularLine, activeLineId, metroNetwork])
+
+  // Обновление позиции при изменении радиуса или поворота для ВСЕХ станций активной круговой линии
+  useEffect(() => {
+    if (!isPartOfActiveCircularLine || !circleRef.current) return
+
+    const updatePosition = () => {
       const radius = circleRadiusRef.current
       const rotationAngle = rotationAngleRef.current || 0
 
-      // Применяем изменения если:
-      // 1. Радиус отличается от исходного ИЛИ
-      // 2. Есть поворот ИЛИ
-      // 3. Радиус был явно применен через ползунок
       if (radius == null || !centerRef.current || !originalAngleRef.current) return
 
       const { x: centerX, y: centerY } = centerRef.current
-
-      // Применяем поворот к исходному углу
       const rotatedAngle = originalAngleRef.current + rotationAngle
 
       const newX = centerX + radius * Math.cos(rotatedAngle)
       const newY = centerY + radius * Math.sin(rotatedAngle)
 
+      // Обновляем позицию станции
       circleRef.current.position({ x: newX, y: newY })
-      updateConnectedElements(newX, newY)
-    }, 16)
 
+      // Обновляем связанные элементы
+      updateConnectedElements(newX, newY)
+    }
+
+    const interval = setInterval(updatePosition, 16)
     return () => clearInterval(interval)
-  }, [isActiveCircular, circleRadiusRef.current, rotationAngleRef.current, updateConnectedElements])
+  }, [isPartOfActiveCircularLine, circleRadiusRef.current, rotationAngleRef.current, updateConnectedElements])
 
   const handleMouseEnterStation = useCallback(() => {
     onMouseEnter(station.id)
@@ -295,10 +433,8 @@ export const Station = memo(({
     if ((lineMoveEnabled || canMoveCircularLine) && activeLineId) {
       isDraggingLineRef.current = true
       updateCursor('grabbing')
-      // Начинаем перемещение всей линии
       const line = metroNetwork.find(l => l.id === activeLineId)
       if (line) {
-        // Сбрасываем индивидуальные смещения при начале перемещения линии
         line.stations.forEach(st => {
           delete dragOffsetsRef.current[st.id]
         })
@@ -322,14 +458,12 @@ export const Station = memo(({
     const y = node.y()
 
     if ((lineMoveEnabled || canMoveCircularLine) && activeLineId && isDraggingLineRef.current) {
-      // Перемещаем всю линию в REAL-TIME
       const deltaX = x - station.x
       const deltaY = y - station.y
 
       setLineDragOffset({ x: deltaX, y: deltaY })
       updateAllLineStations(deltaX, deltaY)
     } else {
-      // Перемещаем только текущую станцию (индивидуальное перемещение)
       updateConnectedElements(x, y)
     }
   }, [isActiveCircular, lineMoveEnabled, activeLineId, station.x, station.y, updateConnectedElements, setLineDragOffset, canMoveCircularLine, updateAllLineStations])
@@ -342,10 +476,8 @@ export const Station = memo(({
     const y = node.y()
 
     if ((lineMoveEnabled || canMoveCircularLine) && activeLineId && isDraggingLineRef.current) {
-      // Завершаем перемещение всей линии
       const line = metroNetwork.find(l => l.id === activeLineId)
       if (line) {
-        // Применяем смещение ко всем станциям линии
         line.stations.forEach(st => {
           dispatch(updateStationPosition({
             stationId: st.id,
@@ -355,13 +487,11 @@ export const Station = memo(({
         })
         setLineDragOffset(null)
 
-        // Сбрасываем все временные смещения
         line.stations.forEach(st => {
           delete dragOffsetsRef.current[st.id]
         })
       }
     } else {
-      // Завершаем перемещение только текущей станции
       delete dragOffsetsRef.current[station.id]
       dispatch(updateStationPosition({
         stationId: station.id,
@@ -373,22 +503,24 @@ export const Station = memo(({
     handleDragEndStation()
   }, [dispatch, station, dragOffsetsRef, isActiveCircular, lineMoveEnabled, activeLineId, metroNetwork, handleDragEndStation, setLineDragOffset, canMoveCircularLine])
 
-  // Разрешаем перетаскивание если:
-  // - не активная круговая ИЛИ
-  // - активная круговая, но включен режим перемещения линии
   const draggable = !isActiveCircular || canMoveCircularLine
+
+  // Определяем цвет для обычных станций
+  const getStrokeColor = () => {
+    return station.color
+  }
 
   return (
     <Circle
       ref={circleRef}
-      id={`station-${station.id}`} // Добавляем ID для поиска
+      id={`station-${station.id}`}
       x={station.x}
       y={station.y}
       radius={13}
-      fill={isHovered ? station.color : 'transparent'}
-      stroke={station.color}
+      fill={isHovered ? (stationGradient ? 'transparent' : getStrokeColor()) : 'transparent'}
+      stroke={getStrokeColor()}
       strokeWidth={isHovered ? 3 : 2}
-      shadowColor={isHovered ? station.color : 'rgba(0,0,0,0.2)'}
+      shadowColor={isHovered ? getStrokeColor() : 'rgba(0,0,0,0.2)'}
       shadowBlur={isHovered ? 10 : 5}
       shadowOpacity={isHovered ? 0.6 : 0.4}
       draggable={draggable}

@@ -5,4 +5,5 @@ export type Station = {
   color: string
   label: string
   labelOffset: { x: number; y: number }
+  branchIds: number[] // Добавляем branchIds для определения принадлежности к веткам
 }

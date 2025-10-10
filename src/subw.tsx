@@ -1,30 +1,71 @@
-export const metroNetwork = [
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Circle, Layer, Line, Stage, Text } from "react-konva";
+import styles from './subw.module.css'
+
+// === ТИПЫ ===
+type MetroStation = {
+  id: number
+  x: number
+  y: number
+  color: string
+  label: string
+  labelOffset: { x: number; y: number }
+  branchIds: number[]
+}
+
+type MetroSegment = {
+  id: string
+  fromStationId: number
+  toStationId: number
+  timeMinutes: number
+}
+
+type MetroBranch = {
+  id: number
+  color: string
+  name: string
+  stations: MetroStation[]
+  segments: MetroSegment[]
+  isCircular: boolean
+  renderStyle: 'linear' | 'circular' | 'diameter'
+  locking?: boolean
+  curvatureLines?: number
+}
+
+type Network = {
+  stations: Record<number, MetroStation>
+  segments: Record<string, MetroSegment>
+  branches: Record<number, MetroBranch>
+}
+
+// === СТРУКТУРА СЕТИ НА ОСНОВЕ metroNetwork ===
+const metroNetworkStructure: MetroBranch[] = [
   {
     id: 2,
     color: '#1a83cd',
     name: 'Филевская',
     stations: [
-      { id: 100022, x: 576.3333333333331, y: 1011.6666666666667, color: '#1a83cd', label: 'Кунцевская', labelOffset: { x: 0, y: -60 }, branchIds: [2, 4, 15] },
+      { id: 401, x: 576.3333333333331, y: 1011.6666666666667, color: '#1a83cd', label: 'Кунцевская', labelOffset: { x: 0, y: -60 }, branchIds: [2, 4, 15] },
       { id: 402, x: 607.4761904761901, y: 974.3809523809523, color: '#1a83cd', label: 'Пионерская', labelOffset: { x: 0, y: -60 }, branchIds: [2] },
       { id: 403, x: 644.8571428571424, y: 940.904761904762, color: '#1a83cd', label: 'Филёвский парк', labelOffset: { x: 0, y: -60 }, branchIds: [2] },
       { id: 404, x: 676.3333333333328, y: 908.7619047619045, color: '#1a83cd', label: 'Багратионовская', labelOffset: { x: 0, y: -60 }, branchIds: [2] },
-      { id: 1509, x: 708.6666666666666, y: 880.6666666666667, color: '#1a83cd', label: 'Фили', labelOffset: { x: 0, y: -60 }, branchIds: [2, 15] },
+      { id: 405, x: 708.6666666666666, y: 880.6666666666667, color: '#1a83cd', label: 'Фили', labelOffset: { x: 0, y: -60 }, branchIds: [2, 15] },
       { id: 406, x: 851.6190476190473, y: 879.190476190476, color: '#1a83cd', label: 'Кутузовская', labelOffset: { x: 0, y: -60 }, branchIds: [2] },
       { id: 407, x: 1057.333333333333, y: 883.2380952380953, color: '#1a83cd', label: 'Студенческая', labelOffset: { x: 0, y: -60 }, branchIds: [2] },
-      { id: 512, x: 1241.1904761904757, y: 882.2857142857144, color: '#1a83cd', label: 'Киевская', labelOffset: { x: 0, y: -60 }, branchIds: [2, 5] },
+      { id: 408, x: 1241.1904761904757, y: 882.2857142857144, color: '#1a83cd', label: 'Киевская', labelOffset: { x: 0, y: -60 }, branchIds: [2, 5] },
       { id: 409, x: 1460.9047619047615, y: 812.9047619047622, color: '#1a83cd', label: 'Смоленская', labelOffset: { x: 0, y: -60 }, branchIds: [2] },
       { id: 410, x: 1612.9761904761908, y: 815.9523809523814, color: '#1a83cd', label: 'Арбатская', labelOffset: { x: 0, y: -60 }, branchIds: [2] },
-      { id: 411, x: 1689.04761904762, y: 939.6428571428575, color: '#1a83cd', label: 'Александровский сад', labelOffset: { x: 0, y: -60 }, branchIds: [2] },
+      { id: 411, x: 1689.04761904762, y: 939.6428571428575, color: '#1a83cd', label: 'Александровский сад', labelOffset: { x: 0, y: -60 }, branchIds: [2, 11] },
     ],
     segments: [
-      { id: '100022_402', fromStationId: 100022, toStationId: 402, timeMinutes: 2 },
+      { id: '401_402', fromStationId: 401, toStationId: 402, timeMinutes: 2 },
       { id: '402_403', fromStationId: 402, toStationId: 403, timeMinutes: 2 },
       { id: '403_404', fromStationId: 403, toStationId: 404, timeMinutes: 2 },
-      { id: '404_1509', fromStationId: 404, toStationId: 1509, timeMinutes: 2 },
-      { id: '1509_406', fromStationId: 1509, toStationId: 406, timeMinutes: 2 },
+      { id: '404_405', fromStationId: 404, toStationId: 405, timeMinutes: 2 },
+      { id: '405_406', fromStationId: 405, toStationId: 406, timeMinutes: 2 },
       { id: '406_407', fromStationId: 406, toStationId: 407, timeMinutes: 2 },
-      { id: '407_512', fromStationId: 407, toStationId: 512, timeMinutes: 2 },
-      { id: '512_409', fromStationId: 512, toStationId: 409, timeMinutes: 2 },
+      { id: '407_408', fromStationId: 407, toStationId: 408, timeMinutes: 2 },
+      { id: '408_409', fromStationId: 408, toStationId: 409, timeMinutes: 2 },
       { id: '409_410', fromStationId: 409, toStationId: 410, timeMinutes: 2 },
       { id: '410_411', fromStationId: 410, toStationId: 411, timeMinutes: 2 },
     ],
@@ -68,9 +109,9 @@ export const metroNetwork = [
     ],
     segments: [
       { id: 200001, fromStationId: 100001, toStationId: 100002, timeMinutes: 4 },
-      { id: '100002_100003', fromStationId: 100002, toStationId: 100003, timeMinutes: 4 },
-      { id: '100003_100004', fromStationId: 100003, toStationId: 100004, timeMinutes: 4 },
-      { id: '100004_100005', fromStationId: 100004, toStationId: 100005, timeMinutes: 4 },
+      { id: 200002, fromStationId: 100002, toStationId: 100003, timeMinutes: 4 },
+      { id: 200003, fromStationId: 100003, toStationId: 100004, timeMinutes: 4 },
+      { id: 200004, fromStationId: 100004, toStationId: 100005, timeMinutes: 4 },
       { id: 200005, fromStationId: 100005, toStationId: 100006, timeMinutes: 4 },
       { id: 200006, fromStationId: 100006, toStationId: 100007, timeMinutes: 4 },
       { id: 200007, fromStationId: 100007, toStationId: 100008, timeMinutes: 4 },
@@ -83,19 +124,19 @@ export const metroNetwork = [
       { id: 200014, fromStationId: 100014, toStationId: 100015, timeMinutes: 4 },
       { id: 200015, fromStationId: 100015, toStationId: 100016, timeMinutes: 4 },
       { id: 200016, fromStationId: 100016, toStationId: 100017, timeMinutes: 4 },
-      { id: '100017_100018', fromStationId: 100017, toStationId: 100018, timeMinutes: 4 },
-      { id: '100018_100019', fromStationId: 100018, toStationId: 100019, timeMinutes: 4 },
+      { id: 200017, fromStationId: 100017, toStationId: 100018, timeMinutes: 4 },
+      { id: 200018, fromStationId: 100018, toStationId: 100019, timeMinutes: 4 },
       { id: 200019, fromStationId: 100019, toStationId: 100020, timeMinutes: 4 },
       { id: 200020, fromStationId: 100020, toStationId: 100021, timeMinutes: 4 },
-      { id: '100021_200022', fromStationId: 100021, toStationId: 100022, timeMinutes: 4 },
-      { id: '100022_200023', fromStationId: 100022, toStationId: 100023, timeMinutes: 4 },
+      { id: 200021, fromStationId: 100021, toStationId: 100022, timeMinutes: 4 },
+      { id: 200022, fromStationId: 100022, toStationId: 100023, timeMinutes: 4 },
       { id: 200023, fromStationId: 100023, toStationId: 100024, timeMinutes: 4 },
       { id: 200024, fromStationId: 100024, toStationId: 100025, timeMinutes: 4 },
       { id: 200025, fromStationId: 100025, toStationId: 100026, timeMinutes: 4 },
       { id: 200026, fromStationId: 100026, toStationId: 100027, timeMinutes: 4 },
       { id: 200027, fromStationId: 100027, toStationId: 100028, timeMinutes: 4 },
       { id: 200028, fromStationId: 100028, toStationId: 100029, timeMinutes: 4 },
-      { id: '100029_100001', fromStationId: 100029, toStationId: 100001, timeMinutes: 4 },
+      { id: 200029, fromStationId: 100029, toStationId: 100001, timeMinutes: 4 },
     ],
     isCircular: true,
     renderStyle: 'circular',
@@ -110,43 +151,44 @@ export const metroNetwork = [
       { id: 101, x: 2971.9999999999995, y: -244, color: '#FF3333', label: 'Бульвар Рокоссовского', labelOffset: { x: 0, y: -60 }, branchIds: [11] },
       { id: 102, x: 2827.0000000000005, y: -156, color: '#FF3333', label: 'Черкизовская', labelOffset: { x: 0, y: -60 }, branchIds: [11] },
       { id: 103, x: 2708.5000000000014, y: -56.249999999999886, color: '#FF3333', label: 'Преображенская площадь', labelOffset: { x: 0, y: -60 }, branchIds: [11] },
-      { id: 100003, x: 2517.0514349715213, y: 56.79194545891812, color: '#FF3333', label: 'Сокольники', labelOffset: { x: 0, y: -60 }, branchIds: [11, 4] },
+      { id: 104, x: 2505.0000000000005, y: 82, color: '#FF3333', label: 'Сокольники', labelOffset: { x: 0, y: -60 }, branchIds: [11, 4] },
       { id: 105, x: 2427.500000000001, y: 488, color: '#FF3333', label: 'Красносельская', labelOffset: { x: 0, y: -60 }, branchIds: [11] },
-      { id: 507, x: 2282.344256118899, y: 827.9782202593065, color: '#FF3333', label: 'Комсомольская', labelOffset: { x: 0, y: -60 }, branchIds: [11, 5] },
+      { id: 106, x: 2240.833333333333, y: 824.5, color: '#FF3333', label: 'Комсомольская', labelOffset: { x: 0, y: -60 }, branchIds: [11, 5] },
       { id: 107, x: 2093.3333333333335, y: 884.8333333333333, color: '#FF3333', label: 'Красные ворота', labelOffset: { x: 0, y: -60 }, branchIds: [11] },
       { id: 108, x: 1958.5714285714287, y: 922.0952380952383, color: '#FF3333', label: 'Чистые пруды', labelOffset: { x: 0, y: -60 }, branchIds: [11] },
       { id: 109, x: 1855.3095238095236, y: 966.1428571428572, color: '#FF3333', label: 'Лубянка', labelOffset: { x: 0, y: -60 }, branchIds: [11] },
       { id: 110, x: 1772.4642857142856, y: 969.3095238095242, color: '#FF3333', label: 'Охотный ряд', labelOffset: { x: 0, y: -60 }, branchIds: [11] },
       { id: 111, x: 1688.2023809523814, y: 977.0119047619048, color: '#FF3333', label: 'Библиотека им. Ленина', labelOffset: { x: 0, y: -60 }, branchIds: [11] },
       { id: 112, x: 1432.940476190476, y: 1109.5238095238092, color: '#FF3333', label: 'Кропоткинская', labelOffset: { x: 0, y: -60 }, branchIds: [11] },
-      { id: 501, x: 1255.6785714285709, y: 1163.6071428571422, color: '#FF3333', label: 'Парк культуры', labelOffset: { x: 0, y: -60 }, branchIds: [11, 5] },
+      { id: 113, x: 1255.6785714285709, y: 1163.6071428571422, color: '#FF3333', label: 'Парк культуры', labelOffset: { x: 0, y: -60 }, branchIds: [11, 5] },
       { id: 114, x: 1178.0000000000002, y: 1487.0000000000002, color: '#FF3333', label: 'Фрунзенская', labelOffset: { x: 0, y: -60 }, branchIds: [11] },
       { id: 115, x: 1107.3333333333337, y: 1600.166666666667, color: '#FF3333', label: 'Спортивная', labelOffset: { x: 0, y: -60 }, branchIds: [11] },
       { id: 116, x: 1076.5000000000002, y: 1691.0000000000002, color: '#FF3333', label: 'Воробьёвы горы', labelOffset: { x: 0, y: -60 }, branchIds: [11] },
       { id: 117, x: 1047.8636363636363, y: 1777.136363636364, color: '#FF3333', label: 'Университет', labelOffset: { x: 0, y: -60 }, branchIds: [11] },
-      { id: 100018, x: 979.7672713150743, y: 1959.8589290621278, color: '#FF3333', label: 'Проспект Вернадского', labelOffset: { x: 0, y: -60 }, branchIds: [11, 4] },
+      { id: 118, x: 843.5000000000002, y: 1907.0000000000002, color: '#FF3333', label: 'Проспект Вернадского', labelOffset: { x: 0, y: -60 }, branchIds: [11, 4] },
       { id: 119, x: 730.0000000000005, y: 2051, color: '#FF3333', label: 'Юго-Западная', labelOffset: { x: 0, y: -60 }, branchIds: [11] },
+      { id: 411, x: 1689.04761904762, y: 939.6428571428575, color: '#FF3333', label: 'Александровский сад', labelOffset: { x: 0, y: -60 }, branchIds: [11, 2] },
     ],
     segments: [
       { id: '101_102', fromStationId: 101, toStationId: 102, timeMinutes: 2 },
       { id: '102_103', fromStationId: 102, toStationId: 103, timeMinutes: 2 },
-      { id: '103_100003', fromStationId: 103, toStationId: 100003, timeMinutes: 2 },
-      { id: '100003_105', fromStationId: 100003, toStationId: 105, timeMinutes: 2 },
-      { id: '105_507', fromStationId: 105, toStationId: 507, timeMinutes: 2 },
-      { id: '507_107', fromStationId: 507, toStationId: 107, timeMinutes: 2 },
+      { id: '103_104', fromStationId: 103, toStationId: 104, timeMinutes: 2 },
+      { id: '104_105', fromStationId: 104, toStationId: 105, timeMinutes: 2 },
+      { id: '105_106', fromStationId: 105, toStationId: 106, timeMinutes: 2 },
+      { id: '106_107', fromStationId: 106, toStationId: 107, timeMinutes: 2 },
       { id: '107_108', fromStationId: 107, toStationId: 108, timeMinutes: 2 },
       { id: '108_109', fromStationId: 108, toStationId: 109, timeMinutes: 2 },
       { id: '109_110', fromStationId: 109, toStationId: 110, timeMinutes: 2 },
       { id: '110_111', fromStationId: 110, toStationId: 111, timeMinutes: 2 },
       { id: '111_112', fromStationId: 111, toStationId: 112, timeMinutes: 2 },
-      { id: '112_501', fromStationId: 112, toStationId: 501, timeMinutes: 2 },
-      { id: '501_114', fromStationId: 501, toStationId: 114, timeMinutes: 2 },
+      { id: '112_113', fromStationId: 112, toStationId: 113, timeMinutes: 2 },
+      { id: '113_114', fromStationId: 113, toStationId: 114, timeMinutes: 2 },
       { id: '114_115', fromStationId: 114, toStationId: 115, timeMinutes: 2 },
       { id: '115_116', fromStationId: 115, toStationId: 116, timeMinutes: 3 },
       { id: '116_117', fromStationId: 116, toStationId: 117, timeMinutes: 3 },
-      { id: '117_100018', fromStationId: 117, toStationId: 100018, timeMinutes: 3 },
-      { id: '100018_119', fromStationId: 100018, toStationId: 119, timeMinutes: 3 },
-
+      { id: '117_118', fromStationId: 117, toStationId: 118, timeMinutes: 3 },
+      { id: '118_119', fromStationId: 118, toStationId: 119, timeMinutes: 3 },
+      { id: '111_411', fromStationId: 111, toStationId: 411, timeMinutes: 2 },
     ],
     isCircular: false,
     renderStyle: 'linear',
@@ -162,7 +204,7 @@ export const metroNetwork = [
       { id: 504, x: 1935.528106921291, y: 1508.9611534230612, color: '#964B00', label: 'Павелецкая', labelOffset: { x: 20, y: -20 }, branchIds: [5] },
       { id: 505, x: 2170.2211837617165, y: 1356.6351876136898, color: '#964B00', label: 'Таганская', labelOffset: { x: 20, y: -20 }, branchIds: [5] },
       { id: 506, x: 2297.1801261368696, y: 1107.3052111344825, color: '#964B00', label: 'Курская', labelOffset: { x: 20, y: -20 }, branchIds: [5] },
-      { id: 507,  x: 2282.344256118899, y: 827.9782202593065, color: '#964B00', label: 'Комсомольская', labelOffset: { x: 20, y: -20 }, branchIds: [5, 11] },
+      { id: 507, x: 2282.344256118899, y: 827.9782202593065, color: '#964B00', label: 'Комсомольская', labelOffset: { x: 20, y: -20 }, branchIds: [5, 11] },
       { id: 508, x: 2129.840449808021, y: 593.6355738057296, color: '#964B00', label: 'Проспект Мира', labelOffset: { x: 20, y: -20 }, branchIds: [5] },
       { id: 509, x: 1880.7253094973182, y: 467.00570555648824, color: '#964B00', label: 'Новослободская', labelOffset: { x: 20, y: -20 }, branchIds: [5] },
       { id: 510, x: 1601.790574642113, y: 481.8199981114826, color: '#964B00', label: 'Белорусская', labelOffset: { x: 20, y: -20 }, branchIds: [5, 15] },
@@ -199,9 +241,9 @@ export const metroNetwork = [
       { id: 1504, x: 332.19322344322313, y: 1188.850732600732, color: '#fff900', label: 'Немчиновка', labelOffset: { x: 0, y: -60 }, branchIds: [15] },
       { id: 1505, x: 386.1465201465195, y: 1138.2930402930397, color: '#fff900', label: 'Сетунь', labelOffset: { x: 0, y: -60 }, branchIds: [15] },
       { id: 1506, x: 442.95695970695954, y: 1086.59249084249, color: '#fff900', label: 'Рабочий Посёлок', labelOffset: { x: 0, y: -60 }, branchIds: [15] },
-      { id: 100022,  x: 575.5326298699836, y: 1013.8799295836521, color: '#fff900', label: 'Кунцевская', labelOffset: { x: 0, y: -60 }, branchIds: [15, 2, 4] },
+      { id: 1507, x: 527.7673992673988, y: 1035.0347985347985, color: '#fff900', label: 'Кунцевская', labelOffset: { x: 0, y: -60 }, branchIds: [15, 2, 4] },
       { id: 1508, x: 766.0064102564098, y: 1028.76282051282, color: '#fff900', label: 'Славянский бульвар', labelOffset: { x: 0, y: -60 }, branchIds: [15] },
-      { id: 1509, x: 708.6666666666666, y: 880.6666666666667, color: '#fff900', label: 'Фили', labelOffset: { x: 0, y: -60 }, branchIds: [15, 2] },
+      { id: 1509, x: 727.3882783882779, y: 933.347985347985, color: '#fff900', label: 'Фили', labelOffset: { x: 0, y: -60 }, branchIds: [15, 2] },
       { id: 1510, x: 967.8415750915744, y: 622.076007326007, color: '#fff900', label: 'Тестовская (Москва-Сити)', labelOffset: { x: 0, y: -60 }, branchIds: [15] },
       { id: 1511, x: 1285.0091575091576, y: 595.7326007326006, color: '#fff900', label: 'Беговая', labelOffset: { x: 0, y: -60 }, branchIds: [15] },
       { id: 1512, x: 1443.6767399267399, y: 520.3891941391943, color: '#fff900', label: 'Белорусская', labelOffset: { x: 0, y: -60 }, branchIds: [15, 5] },
@@ -227,8 +269,8 @@ export const metroNetwork = [
       { id: '1503_1504', fromStationId: 1503, toStationId: 1504, timeMinutes: 3 },
       { id: '1504_1505', fromStationId: 1504, toStationId: 1505, timeMinutes: 3 },
       { id: '1505_1506', fromStationId: 1505, toStationId: 1506, timeMinutes: 3 },
-      { id: '1506_100022', fromStationId: 1506, toStationId: 100022, timeMinutes: 3 },
-      { id: '100022_1508', fromStationId: 100022, toStationId: 1508, timeMinutes: 3 },
+      { id: '1506_1507', fromStationId: 1506, toStationId: 1507, timeMinutes: 3 },
+      { id: '1507_1508', fromStationId: 1507, toStationId: 1508, timeMinutes: 3 },
       { id: '1508_1509', fromStationId: 1508, toStationId: 1509, timeMinutes: 3 },
       { id: '1509_1510', fromStationId: 1509, toStationId: 1510, timeMinutes: 3 },
       { id: '1510_1511', fromStationId: 1510, toStationId: 1511, timeMinutes: 3 },
@@ -253,3 +295,454 @@ export const metroNetwork = [
     renderStyle: 'diameter',
   }
 ];
+
+// === КОМПОНЕНТ (остается таким же как в вашем коде) ===
+export const Subw = () => {
+  const metroNetwork: MetroBranch[] = metroNetworkStructure
+
+  const network = useRef<Network>({
+    stations: {},
+    segments: {},
+    branches: {},
+  })
+
+  const [isInitialized, setIsInitialized] = useState(false)
+
+  useEffect(() => {
+    const stations: Record<number, MetroStation> = {}
+    const segments: Record<string, MetroSegment> = {}
+    const branches: Record<number, MetroBranch> = {}
+
+    metroNetwork.forEach((branch) => {
+      branches[branch.id] = branch
+
+      branch.stations.forEach((station) => {
+        if (stations[station.id]) {
+          stations[station.id].branchIds = [...new Set([...stations[station.id].branchIds, ...station.branchIds])]
+        } else {
+          stations[station.id] = { ...station }
+        }
+      })
+
+      branch.segments.forEach((segment) => {
+        segments[segment.id] = segment
+      })
+    })
+
+    network.current = { stations, segments, branches }
+    setIsInitialized(true)
+  }, [])
+
+  const circleRefs = useRef<Record<number, any>>({})
+  const lineRefs = useRef<Record<string, any>>({})
+  const textRefs = useRef<Record<number, any>>({})
+
+  const getStation = (id: number): MetroStation | undefined => {
+    return network.current.stations[id]
+  }
+
+  const getBranch = (id: number): MetroBranch | undefined => {
+    return network.current.branches[id]
+  }
+
+  const findBranchForSegment = (segmentId: string): number | null => {
+    for (const branchId in network.current.branches) {
+      const branch = network.current.branches[+branchId]
+      if (branch.segments.some((s) => s.id === segmentId)) {
+        return +branchId
+      }
+    }
+    return null
+  }
+
+  // === ИСПРАВЛЕННАЯ ФУНКЦИЯ ДЛЯ РАСЧЕТА НАПРАВЛЕНИЙ ЛИНИЙ ===
+  const calculateLineDirections = (station: MetroStation) => {
+    const directionsByColor = new Map<string, { angles: number[]; color: string }>();
+
+    // Находим все сегменты, подключенные к этой станции
+    Object.values(network.current.segments).forEach(segment => {
+      if (segment.fromStationId === station.id || segment.toStationId === station.id) {
+        const otherStationId = segment.fromStationId === station.id ? segment.toStationId : segment.fromStationId;
+        const otherStation = getStation(otherStationId);
+
+        if (otherStation) {
+          // Находим ветку этого сегмента
+          const branchId = findBranchForSegment(segment.id);
+          const branch = branchId ? getBranch(branchId) : null;
+
+          if (branch) {
+            // Рассчитываем угол направления линии
+            const dx = otherStation.x - station.x;
+            const dy = otherStation.y - station.y;
+            const angle = Math.atan2(dy, dx) * (180 / Math.PI); // угол в градусах
+
+            // ✅ ГРУППИРУЕМ УГЛЫ ПО ЦВЕТАМ ВЕТОК
+            if (!directionsByColor.has(branch.color)) {
+              directionsByColor.set(branch.color, { angles: [], color: branch.color });
+            }
+            directionsByColor.get(branch.color)!.angles.push(angle);
+          }
+        }
+      }
+    });
+
+    // ✅ ВЫЧИСЛЯЕМ СРЕДНИЙ УГОЛ ДЛЯ КАЖДОГО ЦВЕТА
+    const directions: { angle: number; color: string }[] = [];
+
+    directionsByColor.forEach((value, color) => {
+      if (value.angles.length > 0) {
+        // Вычисляем средний угол для этого цвета
+        let sumSin = 0;
+        let sumCos = 0;
+
+        value.angles.forEach(angle => {
+          const rad = angle * Math.PI / 180;
+          sumSin += Math.sin(rad);
+          sumCos += Math.cos(rad);
+        });
+
+        const avgAngle = Math.atan2(sumSin / value.angles.length, sumCos / value.angles.length) * (180 / Math.PI);
+
+        directions.push({
+          angle: avgAngle,
+          color: color
+        });
+      }
+    });
+
+    return directions;
+  }
+
+  // === ФУНКЦИЯ ДЛЯ ПЕРЕСЧЕТА ГРАДИЕНТА СТАНЦИИ ===
+  const updateStationGradient = (stationId: number) => {
+    const station = getStation(stationId);
+    const circle = circleRefs.current[stationId];
+
+    if (!station || !circle || station.branchIds.length <= 1) return;
+
+    const lineDirections = calculateLineDirections(station);
+
+    if (lineDirections.length > 1) {
+      const sortedDirections = [...lineDirections].sort((a, b) => a.angle - b.angle);
+      const startAngle = sortedDirections[0].angle;
+      const endAngle = sortedDirections[sortedDirections.length - 1].angle;
+      const angleRange = endAngle - startAngle;
+
+      const startX = Math.cos(startAngle * Math.PI / 180);
+      const startY = Math.sin(startAngle * Math.PI / 180);
+      const endX = Math.cos(endAngle * Math.PI / 180);
+      const endY = Math.sin(endAngle * Math.PI / 180);
+
+      circle.strokeLinearGradientStartPoint({
+        x: startX * 14,
+        y: startY * 14
+      });
+      circle.strokeLinearGradientEndPoint({
+        x: endX * 14,
+        y: endY * 14
+      });
+
+      // ✅ БОЛЕЕ ПЛАВНЫЙ ГРАДИЕНТ С ПРОВЕРКОЙ ГРАНИЦ
+      const colorStops: any[] = [];
+
+      // Добавляем начальный цвет (гарантированно 0)
+      colorStops.push(0, sortedDirections[0].color);
+
+      // Добавляем промежуточные точки для плавности с проверкой границ
+      if (sortedDirections.length > 2) {
+        for (let i = 1; i < sortedDirections.length - 1; i++) {
+          const normalizedAngle = angleRange > 0 ? (sortedDirections[i].angle - startAngle) / angleRange : 0;
+
+          // ✅ ГАРАНТИРУЕМ, ЧТО ВСЕ ЗНАЧЕНИЯ В ДИАПАЗОНЕ [0, 1]
+          const prevStop = Math.max(0, normalizedAngle - 0.1);
+          const mainStop = Math.max(0, Math.min(1, normalizedAngle));
+          const nextStop = Math.min(1, normalizedAngle + 0.1);
+
+          if (prevStop > 0 && prevStop < 1) {
+            colorStops.push(prevStop, sortedDirections[i-1].color);
+          }
+
+          if (mainStop > 0 && mainStop < 1) {
+            colorStops.push(mainStop, sortedDirections[i].color);
+          }
+
+          if (nextStop > 0 && nextStop < 1 && nextStop > mainStop) {
+            colorStops.push(nextStop, sortedDirections[i].color);
+          }
+        }
+      }
+
+      // Добавляем конечный цвет (гарантированно 1)
+      colorStops.push(1, sortedDirections[sortedDirections.length - 1].color);
+
+      // ✅ УДАЛЯЕМ ДУБЛИКАТЫ И СОРТИРУЕМ ПО ВОЗРАСТАНИЮ
+      const uniqueStops = [];
+      const seen = new Set();
+
+      for (let i = 0; i < colorStops.length; i += 2) {
+        const stop = colorStops[i];
+        const color = colorStops[i + 1];
+        const key = `${stop.toFixed(4)}_${color}`;
+
+        if (!seen.has(key) && stop >= 0 && stop <= 1) {
+          seen.add(key);
+          uniqueStops.push(stop, color);
+        }
+      }
+
+      // Сортируем по возрастанию stop значений
+      const sortedStops = [];
+      const stopsWithColors = [];
+
+      for (let i = 0; i < uniqueStops.length; i += 2) {
+        stopsWithColors.push({
+          stop: uniqueStops[i],
+          color: uniqueStops[i + 1]
+        });
+      }
+
+      stopsWithColors.sort((a, b) => a.stop - b.stop);
+
+      stopsWithColors.forEach(item => {
+        sortedStops.push(item.stop, item.color);
+      });
+
+      circle.strokeLinearGradientColorStops(sortedStops);
+    } else if (station.branchIds.length > 1) {
+      // ✅ ИСПРАВЛЕННЫЙ РАДИАЛЬНЫЙ ГРАДИЕНТ - РОВНО ПО КОЛИЧЕСТВУ ВЕТОК
+      const branchColors = station.branchIds.map((bid) => getBranch(bid)?.color || '#fff');
+
+      circle.strokeRadialGradientStartPoint({ x: 0, y: 0 });
+      circle.strokeRadialGradientStartRadius(0);
+      circle.strokeRadialGradientEndPoint({ x: 0, y: 0 });
+      circle.strokeRadialGradientEndRadius(14);
+
+      // ✅ РОВНОЕ РАСПРЕДЕЛЕНИЕ ЦВЕТОВ ПО КОЛИЧЕСТВУ ВЕТОК
+      const radialColorStops: any[] = [];
+      const segmentCount = branchColors.length;
+
+      branchColors.forEach((color, index) => {
+        const startPosition = index / segmentCount;
+        const endPosition = (index + 1) / segmentCount;
+
+        // Плавный переход в начале сегмента
+        radialColorStops.push(startPosition, color);
+        // Плавный переход в конце сегмента
+        radialColorStops.push(endPosition, color);
+      });
+
+      circle.strokeRadialGradientColorStops(radialColorStops);
+    }
+  }
+
+  // === ОБНОВЛЕННАЯ ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ СВЯЗАННЫХ СЕГМЕНТОВ И ГРАДИЕНТОВ ===
+  const updateConnectedStations = (stationId: number) => {
+    const station = getStation(stationId)
+    if (!station) return
+
+    // Обновляем связанные сегменты
+    Object.values(network.current.segments).forEach((segment) => {
+      if (segment.fromStationId === stationId || segment.toStationId === stationId) {
+        const from = getStation(segment.fromStationId)!
+        const to = getStation(segment.toStationId)!
+        const key = segment.id
+
+        if (lineRefs.current[key]) {
+          lineRefs.current[key].points([from.x, from.y, to.x, to.y])
+        }
+
+        // ✅ ОБНОВЛЯЕМ ГРАДИЕНТЫ СВЯЗАННЫХ СТАНЦИЙ
+        const otherStationId = segment.fromStationId === stationId ? segment.toStationId : segment.fromStationId;
+        updateStationGradient(otherStationId);
+      }
+    })
+
+    // Обновляем градиент текущей станции
+    updateStationGradient(stationId);
+  }
+
+  // === ОБНОВЛЕННЫЙ handleDragMove ===
+  const handleDragMove = (stationId: number) => (e: any) => {
+    const pos = e.target.position()
+    const station = getStation(stationId)
+    if (!station) return
+
+    station.x = pos.x
+    station.y = pos.y
+
+    updateConnectedStations(stationId)
+
+    // Обновление лейбла
+    if (textRefs.current[stationId]) {
+      const offset = station.labelOffset || { x: 0, y: -20 }
+      textRefs.current[stationId].position({
+        x: pos.x + offset.x,
+        y: pos.y + offset.y,
+      })
+    }
+  }
+
+  // === МЕМОИЗИРУЕМ ДАННЫЕ ===
+  const allStations = useMemo(() => {
+    if (!isInitialized) return [];
+    return Object.values(network.current.stations);
+  }, [isInitialized, network.current.stations])
+
+  const allSegments = useMemo(() => {
+    if (!isInitialized) return [];
+    return Object.values(network.current.segments);
+  }, [isInitialized, network.current.segments])
+
+  // === УПРОЩЕННОЕ МАСШТАБИРОВАНИЕ И ЦЕНТРИРОВАНИЕ ===
+  const [stageConfig, setStageConfig] = useState({
+    scale: 1,
+    x: 0,
+    y: 0
+  })
+
+  useEffect(() => {
+    if (allStations.length === 0) return
+
+    // Простое центрирование - находим центр масс всех станций
+    const centerX = allStations.reduce((sum, s) => sum + s.x, 0) / allStations.length;
+    const centerY = allStations.reduce((sum, s) => sum + s.y, 0) / allStations.length;
+
+    // Центрируем в середине Stage
+    const stageWidth = 1600;
+    const stageHeight = 1200;
+
+    setStageConfig({
+      scale: 0.8, // фиксированный масштаб
+      x: stageWidth / 2 - centerX * 0.8,
+      y: stageHeight / 2 - centerY * 0.8
+    });
+  }, [allStations])
+
+  // === МАСШТАБИРОВАНИЕ КОЛЕСОМ ===
+  const handleWheel = (e: any) => {
+    e.evt.preventDefault()
+    const stage = e.target.getStage()
+    if (!stage) return
+
+    const pointerPos = stage.getPointerPosition()
+    if (!pointerPos) return
+
+    const oldScale = stageConfig.scale
+    const newScale = Math.max(0.3, Math.min(3.0, oldScale - e.evt.deltaY * 0.001))
+
+    const newX = pointerPos.x - ((pointerPos.x - stageConfig.x) * newScale) / oldScale
+    const newY = pointerPos.y - ((pointerPos.y - stageConfig.y) * newScale) / oldScale
+
+    setStageConfig({
+      scale: newScale,
+      x: newX,
+      y: newY
+    })
+  }
+
+  // === ФУНКЦИЯ ДЛЯ СОЗДАНИЯ НАПРАВЛЕННОГО ГРАДИЕНТА ===
+  const renderGradientStation = (station: MetroStation) => {
+    const branchColors = station.branchIds.map((bid) => getBranch(bid)?.color || '#fff')
+
+    if (branchColors.length === 1) {
+      return (
+        <Circle
+          key={station.id}
+          x={station.x}
+          y={station.y}
+          radius={14}
+          fill="transparent"
+          stroke={branchColors[0]}
+          strokeWidth={3}
+          draggable
+          onDragMove={handleDragMove(station.id)}
+          ref={(el) => (circleRefs.current[station.id] = el)}
+        />
+      )
+    }
+
+    return (
+      <Circle
+        key={station.id}
+        x={station.x}
+        y={station.y}
+        radius={14}
+        fill="transparent"
+        stroke={branchColors[0]}
+        strokeWidth={5}
+        draggable
+        onDragMove={handleDragMove(station.id)}
+        ref={(el) => {
+          circleRefs.current[station.id] = el;
+          // ✅ СРАЗУ ПРИМЕНЯЕМ ГРАДИЕНТ ПРИ СОЗДАНИИ
+          if (el) {
+            setTimeout(() => updateStationGradient(station.id), 10);
+          }
+        }}
+      />
+    );
+  }
+
+  if (!isInitialized) {
+    return <div className={styles.wrapper}>Загрузка...</div>
+  }
+
+  return (
+    <div className={styles.wrapper}>
+      <Stage width={1920} height={1400} style={{ background: '#333', cursor: 'grab' }} onWheel={handleWheel}>
+        <Layer
+          scaleX={stageConfig.scale}
+          scaleY={stageConfig.scale}
+          x={stageConfig.x}
+          y={stageConfig.y}
+        >
+          {/* Сегменты */}
+          {allSegments.map((segment) => {
+            const from = getStation(segment.fromStationId)!
+            const to = getStation(segment.toStationId)!
+            const branchId = findBranchForSegment(segment.id)
+            const branch = branchId ? getBranch(branchId) : null
+            const color = branch?.color || '#fff'
+
+            return (
+              <Line
+                key={segment.id}
+                points={[from.x, from.y, to.x, to.y]}
+                stroke={color}
+                strokeWidth={4}
+                listening={false}
+                ref={(el) => (lineRefs.current[segment.id] = el)}
+              />
+            )
+          })}
+
+          {/* Станции */}
+          {allStations.map((station) => renderGradientStation(station))}
+
+          {/* Лейблы */}
+          {allStations.map((station) => {
+            const offset = station.labelOffset || { x: 0, y: -20 }
+            const labelX = station.x + offset.x
+            const labelY = station.y + offset.y
+
+            return (
+              <Text
+                key={`label-${station.id}`}
+                x={labelX}
+                y={labelY}
+                text={station.label}
+                fontSize={12}
+                fontFamily="Arial, sans-serif"
+                fill="#ffffff"
+                align="center"
+                width={120}
+                ellipsis
+                ref={(el) => (textRefs.current[station.id] = el)}
+              />
+            )
+          })}
+        </Layer>
+      </Stage>
+    </div>
+  )
+}

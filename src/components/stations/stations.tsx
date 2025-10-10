@@ -1,3 +1,4 @@
+// Stations.tsx
 import { useEffect, useMemo } from 'react'
 import { useMetro } from '@/store/hooks/use-metro.ts'
 import { Station } from './station/station.tsx'
@@ -25,21 +26,33 @@ export const Stations = ({
     updateCursor
   } = useStationCursor(stageRef)
 
-  const stations = useMemo(
-    () => metroNetwork.flatMap((line) => line.stations),
-    [metroNetwork],
-  )
+  // Создаем массив уникальных станций
+  const uniqueStations = useMemo(() => {
+    const seenStations = new Set<number>()
+    const result = []
+
+    for (const line of metroNetwork) {
+      for (const station of line.stations) {
+        if (!seenStations.has(station.id)) {
+          seenStations.add(station.id)
+          result.push(station)
+        }
+      }
+    }
+
+    return result
+  }, [metroNetwork])
 
   // Принудительное обновление stage при изменении позиций станций
   useEffect(() => {
     if (stageRef?.current) {
       stageRef.current.batchDraw()
     }
-  }, [stations.map(s => `${s.x}-${s.y}`).join('|')])
+  }, [uniqueStations.map(s => `${s.x}-${s.y}`).join('|')])
 
   return (
     <>
-      {stations.map((station) => {
+      {uniqueStations.map((station) => {
         const stationLine = metroNetwork.find(line =>
           line.stations.some(s => s.id === station.id)
         )
@@ -49,7 +62,6 @@ export const Stations = ({
           stationLine?.locking &&
           stationLine.id === activeLineId
 
-        // Разрешаем перемещение кольцевой линии, если она активна и включен режим перемещения линии
         const canMoveCircularLine = isActiveCircular && lineMoveEnabled
 
         return (
@@ -64,12 +76,12 @@ export const Stations = ({
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             updateCursor={updateCursor}
-            isActiveCircular={isActiveCircular && !lineMoveEnabled} // Запрещаем индивидуальное перемещение только если не включен режим перемещения линии
+            isActiveCircular={isActiveCircular && !lineMoveEnabled}
             lineMoveEnabled={lineMoveEnabled}
             setLineDragOffset={setLineDragOffset}
             activeLineId={activeLineId}
             canMoveCircularLine={canMoveCircularLine}
-            stationLine={stationLine} // Передаем информацию о линии станции
+            stationLine={stationLine}
           />
         )
       })}

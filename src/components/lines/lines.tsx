@@ -1,3 +1,4 @@
+// Lines.tsx
 import { useMemo } from 'react'
 import type { FC } from 'react'
 import { useMetro } from '@/store/hooks/use-metro.ts'
@@ -62,6 +63,7 @@ export const Lines: FC<LinesProps> = ({ dragOffsetsRef, curvatureRef, lineDragOf
       }
 
       return segments.flatMap((seg) => {
+        // Находим станции в текущей линии
         const fromStation = line.stations.find((s) => s.id === seg.fromStationId)
         const toStation = line.stations.find((s) => s.id === seg.toStationId)
 
@@ -124,8 +126,8 @@ export const Lines: FC<LinesProps> = ({ dragOffsetsRef, curvatureRef, lineDragOf
     })
   }, [
     metroNetwork,
-    dragOffsetsRef.current, // Важно: отслеживаем изменения в ref
-    curvatureRef.current,   // Отслеживаем изменения кривизны
+    dragOffsetsRef.current,
+    curvatureRef.current,
     lineDragOffset,
     activeLineId
   ])

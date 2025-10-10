@@ -1,25 +1,10 @@
+// metro-slices.ts
 import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { metroNetwork } from '../data/metro-network.ts'
-import type { Station } from '../../components/stations/station/types.ts'
+import type { Station, Segment, Line } from '../../components/stations/station/types.ts'
 
-export type Segment = {
-  fromStationId: number
-  toStationId: number
-  timeMinutes: number
-}
-
-export type Line = {
-  id: number
-  color: string
-  name: string
-  stations: Station[]
-  segments: Segment[]
-  isCircular: boolean
-  renderStyle: 'linear' | 'circular'
-  locking?: boolean
-  curvatureLines?: number
-}
+// Удаляем дублирующиеся типы, используем импортированные
 
 export interface MetroState {
   metroNetwork: Line[]
@@ -31,6 +16,58 @@ const initialState: MetroState = {
   metroNetwork,
   activeLineId: metroNetwork[0]?.id || null,
   selectedStations: [],
+}
+
+// Вспомогательная функция для расчета направлений линий
+const calculateLineDirections = (station: Station, metroNetwork: Line[]) => {
+  const directionsByColor = new Map<string, { angles: number[]; color: string }>();
+
+  // Находим все сегменты, подключенные к этой станции
+  metroNetwork.forEach(line => {
+    line.segments.forEach(segment => {
+      if (segment.fromStationId === station.id || segment.toStationId === station.id) {
+        const otherStationId = segment.fromStationId === station.id ? segment.toStationId : segment.fromStationId;
+        const otherStation = line.stations.find(s => s.id === otherStationId);
+
+        if (otherStation) {
+          // Рассчитываем угол направления линии
+          const dx = otherStation.x - station.x;
+          const dy = otherStation.y - station.y;
+          const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+          if (!directionsByColor.has(line.color)) {
+            directionsByColor.set(line.color, { angles: [], color: line.color });
+          }
+          directionsByColor.get(line.color)!.angles.push(angle);
+        }
+      }
+    });
+  });
+
+  // Вычисляем средний угол для каждого цвета
+  const directions: { angle: number; color: string }[] = [];
+
+  directionsByColor.forEach((value, color) => {
+    if (value.angles.length > 0) {
+      let sumSin = 0;
+      let sumCos = 0;
+
+      value.angles.forEach(angle => {
+        const rad = angle * Math.PI / 180;
+        sumSin += Math.sin(rad);
+        sumCos += Math.cos(rad);
+      });
+
+      const avgAngle = Math.atan2(sumSin / value.angles.length, sumCos / value.angles.length) * (180 / Math.PI);
+
+      directions.push({
+        angle: avgAngle,
+        color: color
+      });
+    }
+  });
+
+  return directions;
 }
 
 const metroSlice = createSlice({
@@ -121,6 +158,7 @@ const metroSlice = createSlice({
         return { ...line, stations: newStations }
       })
     },
+
     evenlyDistributeStations: (state, action: PayloadAction<number>) => {
       const lineId = action.payload
       const lineIndex = state.metroNetwork.findIndex(l => l.id === lineId)
@@ -134,8 +172,6 @@ const metroSlice = createSlice({
 
       if (line.renderStyle === 'circular' && line.locking) {
         // Для круговой линии - равномерное распределение по окружности
-
-        // ВАЖНО: Используем геометрический центр, а не среднее арифметическое
         const minX = Math.min(...stations.map(s => s.x))
         const maxX = Math.max(...stations.map(s => s.x))
         const minY = Math.min(...stations.map(s => s.y))
@@ -144,14 +180,12 @@ const metroSlice = createSlice({
         const centerX = (minX + maxX) / 2
         const centerY = (minY + maxY) / 2
 
-        // Вычисляем средний радиус от геометрического центра
         const avgRadius = stations.reduce((sum, station) => {
           const dx = station.x - centerX
           const dy = station.y - centerY
           return sum + Math.sqrt(dx * dx + dy * dy)
         }, 0) / stations.length
 
-        // Распределяем станции по окружности
         const angleStep = (2 * Math.PI) / stations.length
 
         const newStations = stations.map((station, index) => ({
@@ -160,7 +194,6 @@ const metroSlice = createSlice({
           y: centerY + avgRadius * Math.sin(index * angleStep)
         }))
 
-        // Обновляем линию с новыми станциями
         state.metroNetwork[lineIndex] = {
           ...line,
           stations: newStations
@@ -184,6 +217,13 @@ const metroSlice = createSlice({
           stations: newStations
         }
       }
+    },
+
+    // Новый action для обновления градиентов станций
+    updateStationGradients: (state) => {
+      // Эта функция будет вызываться для пересчета градиентов при изменениях
+      // Фактическое применение градиентов будет в компоненте Station
+      state.metroNetwork = [...state.metroNetwork] // Форсируем обновление
     }
   },
 })
@@ -193,7 +233,8 @@ export const {
   setActiveLineId,
   updateLineCurvature,
   alignLineToCircle,
-  evenlyDistributeStations
+  evenlyDistributeStations,
+  updateStationGradients
 } = metroSlice.actions
 
 export default metroSlice.reducer
