@@ -80,44 +80,32 @@ const metroSlice = createSlice({
     ) => {
       const { stationId, x, y } = action.payload
 
-      // Находим линию и станцию
-      const lineIndex = state.metroNetwork.findIndex((line) =>
-        line.stations.some((st) => st.id === stationId),
-      )
-      if (lineIndex === -1) return
+      // Обновляем станцию во ВСЕХ линиях, где она присутствует
+      state.metroNetwork = state.metroNetwork.map((line) => {
+        const stationIndex = line.stations.findIndex((s) => s.id === stationId)
+        if (stationIndex === -1) return line
 
-      const line = state.metroNetwork[lineIndex]
-      const stationIndex = line.stations.findIndex((s) => s.id === stationId)
-      if (stationIndex === -1) return
+        // Создаём полностью новый объект станции
+        const updatedStation: Station = {
+          ...line.stations[stationIndex],
+          x,
+          y,
+        }
 
-      // Создаём полностью новый объект станции
-      const updatedStation: Station = {
-        ...line.stations[stationIndex],
-        x,
-        y,
-      }
+        // Новый массив станций
+        const updatedStations = [
+          ...line.stations.slice(0, stationIndex),
+          updatedStation,
+          ...line.stations.slice(stationIndex + 1),
+        ]
 
-      // Новый массив станций
-      const updatedStations = [
-        ...line.stations.slice(0, stationIndex),
-        updatedStation,
-        ...line.stations.slice(stationIndex + 1),
-      ]
-
-      // Новая линия
-      const updatedLine: Line = {
-        ...line,
-        stations: updatedStations,
-      }
-
-      // Новый массив линий
-      state.metroNetwork = [
-        ...state.metroNetwork.slice(0, lineIndex),
-        updatedLine,
-        ...state.metroNetwork.slice(lineIndex + 1),
-      ]
+        // Новая линия
+        return {
+          ...line,
+          stations: updatedStations,
+        }
+      })
     },
-
     setActiveLineId: (state, action: PayloadAction<number | null>) => {
       state.activeLineId = action.payload
     },

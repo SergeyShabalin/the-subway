@@ -148,6 +148,9 @@ export const Station = memo(({
     )
   }, [metroNetwork, station.id])
 
+  // Определяем, является ли станция пересадочной
+  const isTransferStation = stationLines.length > 1
+
   // Определяем, является ли станция частью активной круговой линии
   const isPartOfActiveCircularLine = useMemo(() => {
     if (!activeLineId) return false
@@ -160,7 +163,7 @@ export const Station = memo(({
   // Используем оптимизированный хук для градиента
   const stationGradient = useStationGradient(station)
 
-  // Применение градиента к кругу (переприменяем при изменении позиции)
+  // Применение градиента к кругу
   const applyGradient = useCallback(() => {
     if (!circleRef.current || !stationGradient) return;
 
@@ -186,12 +189,20 @@ export const Station = memo(({
       const colorStops: any[] = [];
       const angleRange = endAngle - startAngle;
 
+      // Добавляем плавные переходы между цветами
       colors.forEach((color, index) => {
-        const position = angleRange > 0 ? (index / (colors.length - 1)) : 0.5;
+        const position = index / (colors.length - 1);
         colorStops.push(position, color);
+
+        // Добавляем промежуточные точки для более плавного градиента
+        if (index < colors.length - 1) {
+          const nextPosition = (index + 0.5) / (colors.length - 1);
+          colorStops.push(nextPosition, color);
+        }
       });
 
       circle.strokeLinearGradientColorStops(colorStops);
+
     } else if (stationGradient.type === 'radial') {
       const { colors } = stationGradient;
 
@@ -206,13 +217,26 @@ export const Station = memo(({
       colors.forEach((color, index) => {
         const startPosition = index / segmentCount;
         const endPosition = (index + 1) / segmentCount;
+
         radialColorStops.push(startPosition, color);
+        // Добавляем небольшую зону смешивания цветов
+        const blendPosition = startPosition + 0.1;
+        if (blendPosition < endPosition) {
+          radialColorStops.push(blendPosition, color);
+        }
         radialColorStops.push(endPosition, color);
       });
 
       circle.strokeRadialGradientColorStops(radialColorStops);
     }
   }, [stationGradient]);
+
+  // Применяем градиент при монтировании и при изменении позиции
+  useEffect(() => {
+    if (isTransferStation) {
+      applyGradient();
+    }
+  }, [applyGradient, isTransferStation, station.x, station.y]);
 
   // Обновление ВСЕХ станций линии при перемещении всей линии
   const updateAllLineStations = useCallback((deltaX: number, deltaY: number) => {
@@ -367,11 +391,6 @@ export const Station = memo(({
     circleRef.current?.getLayer()?.batchDraw()
   }, [dragOffsetsRef, stageRef, station, metroNetwork])
 
-  // Применяем градиент при монтировании и при изменении позиции
-  useEffect(() => {
-    applyGradient();
-  }, [applyGradient, station.x, station.y]);
-
   // Инициализация центра и угла для круговых линий
   useEffect(() => {
     if (!isPartOfActiveCircularLine) return
@@ -510,6 +529,15 @@ export const Station = memo(({
     return station.color
   }
 
+  // Функция для определения толщины обводки
+  const getStrokeWidth = () => {
+    if (isTransferStation) {
+      return isHovered ? 8 : 7; // Толще для пересадочных станций
+    } else {
+      return isHovered ? 3 : 2; // Обычная толщина
+    }
+  }
+
   return (
     <Circle
       ref={circleRef}
@@ -519,7 +547,7 @@ export const Station = memo(({
       radius={13}
       fill={isHovered ? (stationGradient ? 'transparent' : getStrokeColor()) : 'transparent'}
       stroke={getStrokeColor()}
-      strokeWidth={isHovered ? 3 : 2}
+      strokeWidth={getStrokeWidth()}
       shadowColor={isHovered ? getStrokeColor() : 'rgba(0,0,0,0.2)'}
       shadowBlur={isHovered ? 10 : 5}
       shadowOpacity={isHovered ? 0.6 : 0.4}
