@@ -1,16 +1,19 @@
 import ReactDOM from 'react-dom/client'
-import { App } from './App'
+
 import { Provider } from 'react-redux'
-import { store } from './store'
-import { Subw } from '@/subw.tsx'
+
+import { App } from '../source/app.tsx'
+import { store } from '../source/store'
+import { ThemeProvider } from '../source/providers/theme-provider'
 
 const rootEl = document.getElementById('root')
 if (rootEl) {
   const root = ReactDOM.createRoot(rootEl)
   root.render(
     <Provider store={store}>
-      <App />
-{/*<Subw/>*/}
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </Provider>,
   )
 }

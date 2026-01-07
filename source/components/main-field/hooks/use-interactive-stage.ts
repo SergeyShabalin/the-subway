@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react'
 
-import { calculateNewScale } from './helpers/calculate-new-scale.ts'
-import { calculateNewPosition } from './helpers/calculate-new-position.ts'
+import { calculateNewScale } from '../../../../src/components/main-field/hooks/helpers/calculate-new-scale.ts'
+import { calculateNewPosition } from '../../../../src/components/main-field/hooks/helpers/calculate-new-position.ts'
 import type {
   IUseZoomingMainFieldOptions,
   TUseInteractiveStageReturn,
-} from '../types.ts'
+} from '../../../../src/components/main-field/types.ts'
 
 /**
  * Хук для управления интерактивным холстом (зум и перемещение)
@@ -22,7 +22,7 @@ const useInteractiveStage = ({
   stageRef,
   canMove = true,
 }: IUseZoomingMainFieldOptions): TUseInteractiveStageReturn => {
-  const [scale, setScale] = useState(0.4)
+  const [scale, setScale] = useState(0.5)
   const [position, setPosition] = useState({ x: 500, y: 100 })
   const [isDragging, setIsDragging] = useState(false)
   const [lastPos, setLastPos] = useState({ x: 0, y: 0 })

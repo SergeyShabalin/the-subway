@@ -1,0 +1,73 @@
+.waveGroup {
+    position: relative;
+    margin: 20px 0;
+    width: 100%;
+}
+
+.input {
+    font-size: 16px;
+    padding: 10px 10px 10px 5px;
+    display: block;
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #515151;
+    background: transparent;
+    color: #b6b1b1;
+}
+
+.input:focus {
+    outline: none;
+}
+
+.label {
+    color: #999;
+    font-size: 18px;
+    font-weight: normal;
+    position: absolute;
+    pointer-events: none;
+    left: 5px;
+    top: 10px;
+    display: flex;
+}
+
+.labelChar {
+    transition: 0.2s ease all;
+    transition-delay: calc(var(--index) * .01s);
+}
+
+/* Анимация при фокусе ИЛИ когда есть значение */
+.waveGroup.focused .labelChar,
+.waveGroup.hasValue .labelChar {
+    transform: translateY(-20px);
+    font-size: 14px;
+    color: #5264AE;
+}
+
+.bar {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+
+.bar:before, .bar:after {
+    content: '';
+    height: 2px;
+    width: 0;
+    bottom: 2px;
+    position: absolute;
+    background: #5264AE;
+    transition: 0.2s ease all;
+}
+
+.bar:before {
+    left: 50%;
+}
+
+.bar:after {
+    right: 50%;
+}
+
+.waveGroup.focused .bar:before,
+.waveGroup.focused .bar:after {
+    width: 50%;
+}

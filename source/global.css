@@ -1,0 +1,31 @@
+:root {
+    --color-surface: #3a3a3a;
+    --color-border: #555555;
+
+}
+
+.dark {
+    background: #313333;
+    color: #ffffff;
+}
+
+.light {
+    background: #ffffff;
+    color: #333333;
+}
+
+body {
+    overflow: hidden;
+    font-family: Arial, Helvetica, sans-serif;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}

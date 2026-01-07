@@ -1,4 +1,3 @@
-// Stations.tsx
 import { useEffect, useMemo } from 'react'
 import { useMetro } from '@/store/hooks/use-metro.ts'
 import { Station } from './station/station.tsx'

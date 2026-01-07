@@ -18,6 +18,7 @@ interface CustomDropdownProps {
   id?: string
   name?: string
   showColor?: boolean
+  highlightEnabled?: boolean // Новый пропс для управления подсветкой
 }
 
 export const Dropdown = ({
@@ -31,6 +32,7 @@ export const Dropdown = ({
                            id,
                            name,
                            showColor = false,
+                           highlightEnabled = false, // По умолчанию отключена
                          }: CustomDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
@@ -56,23 +58,20 @@ export const Dropdown = ({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-
-
   // Сброс highlightedIndex при открытии/закрытии
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && highlightEnabled) {
       const selectedIndex = options.findIndex(opt => opt.value === value)
       setHighlightedIndex(selectedIndex >= 0 ? selectedIndex : 0)
     } else {
       setHighlightedIndex(-1)
     }
-  }, [isOpen, options, value])
+  }, [isOpen, options, value, highlightEnabled])
 
   const handleOptionClick = (option: Option) => {
     onChange(option.value)
     setIsOpen(false)
     setHighlightedIndex(-1)
-
   }
 
   const handleToggle = () => {
@@ -89,12 +88,10 @@ export const Dropdown = ({
     setIsHovered(false)
   }
 
-
   const getButtonStyle = () => {
     const baseStyle = {
       borderLeft: `5px solid ${selectedOption?.color || 'black'}`,
     }
-
 
     if (showColor && selectedOption?.color && isHovered && !isOpen) {
       return {
@@ -103,7 +100,6 @@ export const Dropdown = ({
         boxShadow: `0 0 0 3px ${selectedOption.color}33`
       }
     }
-
 
     if (isOpen) {
       return {
@@ -121,17 +117,47 @@ export const Dropdown = ({
     if (!showColor || !option.color) return {}
 
     return {
-      backgroundColor: isSelected || isHighlighted
+      backgroundColor: isSelected || (highlightEnabled && isHighlighted)
         ? `${option.color}60`
         : `${option.color}15`,
       borderLeft: `5px solid ${option.color}`,
-      color: isSelected || isHighlighted ? '#fff' : '#969798'
+      color: isSelected || (highlightEnabled && isHighlighted) ? '#fff' : '#969798'
+    }
+  }
+
+  // Обработчик для навигации с клавиатуры (только если подсветка включена)
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!highlightEnabled || !isOpen) return
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        setHighlightedIndex(prev =>
+          prev < options.length - 1 ? prev + 1 : 0
+        )
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        setHighlightedIndex(prev =>
+          prev > 0 ? prev - 1 : options.length - 1
+        )
+        break
+      case 'Enter':
+        e.preventDefault()
+        if (highlightedIndex >= 0) {
+          handleOptionClick(options[highlightedIndex])
+        }
+        break
+      case 'Escape':
+        e.preventDefault()
+        setIsOpen(false)
+        setHighlightedIndex(-1)
+        break
     }
   }
 
   return (
     <div className={`${styles.dropdownWrapper} ${className}`}>
-
       {label && (
         <label className={styles.dropdownLabel} htmlFor={id}>
           {label}
@@ -150,10 +176,11 @@ export const Dropdown = ({
             isHovered && selectedOption?.color ? styles.hovered : ''
           }`}
           onClick={handleToggle}
-
+          onKeyDown={handleKeyDown}
           id={id}
           name={name}
           style={getButtonStyle()}
+          tabIndex={0}
         >
           <span className={styles.dropdownSelected}>
             {selectedOption ? selectedOption.label : placeholder}
@@ -166,7 +193,7 @@ export const Dropdown = ({
             className={styles.dropdownMenu}
             role="listbox"
             aria-activedescendant={
-              highlightedIndex >= 0 ? `option-${highlightedIndex}` : undefined
+              highlightEnabled && highlightedIndex >= 0 ? `option-${highlightedIndex}` : undefined
             }
           >
             {options.map((option, index) => (
@@ -175,10 +202,11 @@ export const Dropdown = ({
                 id={`option-${index}`}
                 className={`${styles.dropdownItem} ${
                   value === option.value ? styles.selected : ''
-                } ${highlightedIndex === index ? styles.highlighted : ''}`}
+                } ${
+                  highlightEnabled && highlightedIndex === index ? styles.highlighted : ''
+                }`}
                 onClick={() => handleOptionClick(option)}
-                onMouseEnter={() => setHighlightedIndex(index)}
-
+                onMouseEnter={() => highlightEnabled && setHighlightedIndex(index)}
                 aria-selected={value === option.value}
                 tabIndex={-1}
                 style={getOptionStyle(

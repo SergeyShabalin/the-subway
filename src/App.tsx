@@ -1,4 +1,3 @@
-// App.tsx
 import './global.css'
 import { ControlPanel, MainField } from '@/components'
 import { useRef, useState } from 'react'
@@ -21,6 +20,7 @@ const App = () => {
         setLineMoveEnabled={setLineMoveEnabled}
         lineMoveEnabled={lineMoveEnabled}
       />
+
       <MainField
         freeMoving={freeMoving}
         lineMoveEnabled={lineMoveEnabled}

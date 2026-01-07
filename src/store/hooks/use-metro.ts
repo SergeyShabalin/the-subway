@@ -4,7 +4,10 @@ import {
   alignLineToCircle,
   setActiveLineId,
   updateStationPosition,
-  updateLineCurvature, evenlyDistributeStations
+  updateLineCurvature, evenlyDistributeStations,
+
+  addStation,
+
 } from '../slices/metro-slices.ts'
 import type { AppDispatch, RootState } from '@/store'
 
@@ -35,6 +38,13 @@ export const useMetro = () => {
       setActiveLineId: (id: number | null) => dispatch(setActiveLineId(id)),
       updateLineCurvature: (lineId: number, curvature: number) =>
         dispatch(updateLineCurvature({ lineId, curvature })),
+
+
+      addNewStation: (payload) =>{
+        console.log('wwwww',payload)
+         dispatch(addStation( payload ))
+      }
+
 
     },
   }

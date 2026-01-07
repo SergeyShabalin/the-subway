@@ -24,12 +24,13 @@
     "noUnusedParameters": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@components/*": ["src/components/*"],
-      "@store/*": ["src/store/*"],
-      "@assets/*": ["src/assets/*"]
+      "@/*": ["source/*"],
+      "@components/*": ["source/components/*"],
+      "@store/*": ["source/store/*"],
+      "@context/*": ["source/context/*"],
+      "@assets/*": ["source/assets/*"]
     }
   },
 
-  "include": ["src"],
+  "include": ["source"],
    }

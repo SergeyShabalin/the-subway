@@ -1,8 +1,8 @@
 import { type ChangeEvent, useEffect, useState } from 'react'
 import type { ICurvatureProps } from './types.ts'
-import { Range } from '@components/ui/range/range.tsx'
-import { CurvatureIcon } from '@assets/curvature-icon.tsx'
-import { useMetro } from '@/store/hooks/use-metro.ts'
+import { CurvatureIcon } from '../../../../assets/curvature-icon.tsx'
+import { useMetro } from '../../../../store/hooks/use-metro.ts'
+
 
 const Curvature = ({ activeLineId, curvatureRef }: ICurvatureProps) => {
   const { metroNetwork, actions: metroActions } = useMetro()

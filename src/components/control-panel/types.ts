@@ -5,5 +5,5 @@ export interface IControlPanelProps {
   circleRadiusRef?: RefObject<number>
   setFreeMoving: Dispatch<SetStateAction<boolean>>
   freeMoving: boolean
-  rotationAngleRef?: RefObject<number>
+  rotationAngleRef: RefObject<number>
 }

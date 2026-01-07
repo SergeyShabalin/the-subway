@@ -1,18 +1,18 @@
-import { type ChangeEvent, type ReactNode, useState } from 'react'
+import { useState } from 'react'
+import type { FC } from 'react'
 import styles from './range.module.css'
 import { ArrowIcon } from '@assets/arrow-icon.tsx'
+import type { IRangeProps } from '@components/ui/range/types.ts'
 
-export interface IRangeProps {
-  value: number
-  onChange: (e: ChangeEvent<HTMLInputElement>) => void
-  icon: ReactNode
-  placeholder: string
-  min: number
-  max: number
-  step: number
-}
-
-const Range = ({ value, onChange, icon, placeholder, min, max, step }: IRangeProps) => {
+const Range: FC<IRangeProps> = ({
+  value,
+  onChange,
+  icon,
+  placeholder,
+  min,
+  max,
+  step,
+}) => {
   const [isOpen, setIsOpen] = useState(true)
 
   const toggleOpenCloseHandler = () => {
@@ -26,7 +26,9 @@ const Range = ({ value, onChange, icon, placeholder, min, max, step }: IRangePro
         onClick={toggleOpenCloseHandler}
       >
         {placeholder}
-       <div className={`${styles.arrow} ${isOpen ? styles.arrowOpen : ''}`}><ArrowIcon strokeColor={'gray'} /> </div>
+        <div className={`${styles.arrow} ${isOpen ? styles.arrowOpen : ''}`}>
+          <ArrowIcon strokeColor={'gray'} />{' '}
+        </div>
       </div>
 
       <div className={`${styles.combo} ${isOpen ? styles.comboOpen : ''}`}>

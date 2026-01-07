@@ -35,10 +35,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
-      '@components': resolve(__dirname, 'src/components'),
-      '@store': resolve(__dirname, 'src/store'),
-      '@assets': resolve(__dirname, 'src/assets'),
+      '@': resolve(__dirname, 'source'),
+      '@components': resolve(__dirname, 'context/components'),
+      '@store': resolve(__dirname, 'context/store'),
+      '@context': resolve(__dirname, 'context/context'),
+      '@assets': resolve(__dirname, 'context/assets'),
     },
   },
 });

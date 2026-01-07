@@ -158,15 +158,11 @@ const metroSlice = createSlice({
 
       if (stations.length < 3) return
 
-      if (line.renderStyle === 'circular' && line.locking) {
-        // Для круговой линии - равномерное распределение по окружности
-        const minX = Math.min(...stations.map(s => s.x))
-        const maxX = Math.max(...stations.map(s => s.x))
-        const minY = Math.min(...stations.map(s => s.y))
-        const maxY = Math.max(...stations.map(s => s.y))
+      const stationPositions = new Map<number, { x: number; y: number }>()
 
-        const centerX = (minX + maxX) / 2
-        const centerY = (minY + maxY) / 2
+      if (line.renderStyle === 'circular' && line.locking) {
+        const centerX = stations.reduce((sum, s) => sum + s.x, 0) / stations.length
+        const centerY = stations.reduce((sum, s) => sum + s.y, 0) / stations.length
 
         const avgRadius = stations.reduce((sum, station) => {
           const dx = station.x - centerX
@@ -174,37 +170,79 @@ const metroSlice = createSlice({
           return sum + Math.sqrt(dx * dx + dy * dy)
         }, 0) / stations.length
 
-        const angleStep = (2 * Math.PI) / stations.length
+        // Вычисляем углы всех станций и сортируем их
+        const stationsWithAngles = stations.map(station => {
+          const dx = station.x - centerX
+          const dy = station.y - centerY
+          let angle = Math.atan2(dy, dx)
+          if (angle < 0) angle += 2 * Math.PI
+          return { station, angle }
+        })
 
-        const newStations = stations.map((station, index) => ({
-          ...station,
-          x: centerX + avgRadius * Math.cos(index * angleStep),
-          y: centerY + avgRadius * Math.sin(index * angleStep)
-        }))
+        // Сортируем станции по углу (против часовой стрелки)
+        stationsWithAngles.sort((a, b) => a.angle - b.angle)
 
-        state.metroNetwork[lineIndex] = {
-          ...line,
-          stations: newStations
+        // Вычисляем угловые расстояния между соседними станциями
+        const angularDistances = []
+        for (let i = 0; i < stationsWithAngles.length; i++) {
+          const currentAngle = stationsWithAngles[i].angle
+          const nextAngle = stationsWithAngles[(i + 1) % stationsWithAngles.length].angle
+          let distance = nextAngle - currentAngle
+          if (distance < 0) distance += 2 * Math.PI
+          angularDistances.push(distance)
         }
+
+        // Находим максимальный промежуток - это будет "разрыв" в кольце
+        const maxGapIndex = angularDistances.indexOf(Math.max(...angularDistances))
+
+        // Начинаем распределение после максимального промежутка
+        const startIndex = (maxGapIndex + 1) % stationsWithAngles.length
+
+        const reorderedStations = [
+          ...stationsWithAngles.slice(startIndex),
+          ...stationsWithAngles.slice(0, startIndex)
+        ].map(item => item.station)
+
+        const angleStep = (2 * Math.PI) / stations.length
+        const startAngle = reorderedStations[0] ?
+          Math.atan2(reorderedStations[0].y - centerY, reorderedStations[0].x - centerX) : 0
+
+        reorderedStations.forEach((station, index) => {
+          const angle = startAngle + index * angleStep
+          stationPositions.set(station.id, {
+            x: centerX + avgRadius * Math.cos(angle),
+            y: centerY + avgRadius * Math.sin(angle)
+          })
+        })
+
       } else {
-        // Для линейной линии - равномерное распределение вдоль прямой
+        // Для линейной линии
         const firstStation = stations[0]
         const lastStation = stations[stations.length - 1]
 
         const dx = (lastStation.x - firstStation.x) / (stations.length - 1)
         const dy = (lastStation.y - firstStation.y) / (stations.length - 1)
 
-        const newStations = stations.map((station, index) => ({
-          ...station,
-          x: firstStation.x + dx * index,
-          y: firstStation.y + dy * index
-        }))
-
-        state.metroNetwork[lineIndex] = {
-          ...line,
-          stations: newStations
-        }
+        stations.forEach((station, index) => {
+          stationPositions.set(station.id, {
+            x: firstStation.x + dx * index,
+            y: firstStation.y + dy * index
+          })
+        })
       }
+
+      // Обновляем все линии
+      state.metroNetwork = state.metroNetwork.map((networkLine) => {
+        const updatedStations = networkLine.stations.map(station => {
+          const newPosition = stationPositions.get(station.id)
+          return newPosition ? { ...station, ...newPosition } : station
+        })
+
+        return {
+          ...networkLine,
+          stations: updatedStations
+        }
+      })
     },
 
     // Новый action для обновления градиентов станций
@@ -212,8 +250,108 @@ const metroSlice = createSlice({
       // Эта функция будет вызываться для пересчета градиентов при изменениях
       // Фактическое применение градиентов будет в компоненте Station
       state.metroNetwork = [...state.metroNetwork] // Форсируем обновление
+    },
+
+    addStation: (state, action: PayloadAction<{
+      name: string;
+      branchId: number;
+      x: number;
+      y: number;
+      color: string;
+      labelOffset: { x: number; y: number };
+      newStationId?: number;
+      insertAfterStationId?: number; // Для указания позиции вставки
+    }>) => {
+      const { name, branchId, x, y, color, labelOffset, newStationId, insertAfterStationId } = action.payload;
+
+      console.log('Adding station to branch:', branchId, action.payload);
+
+      const lineIndex = state.metroNetwork.findIndex(line => line.id === branchId);
+
+      if (lineIndex === -1) {
+        console.error('Line not found:', branchId);
+        return;
+      }
+
+      const line = state.metroNetwork[lineIndex];
+
+      // Генерируем ID безопасным способом
+      const stationId = newStationId || Math.max(0, ...state.metroNetwork.flatMap(line =>
+        line.stations.map(s => s.id)
+      )) + 1;
+
+      const newStation: Station = {
+        id: stationId,
+        x,
+        y,
+        color: color || line.color,
+        label: name,
+        labelOffset,
+        branchIds: [branchId]
+      };
+
+      // Добавляем станцию в нужную позицию
+      if (insertAfterStationId) {
+        // Вставляем после указанной станции
+        const insertIndex = line.stations.findIndex(s => s.id === insertAfterStationId);
+        if (insertIndex !== -1) {
+          line.stations.splice(insertIndex + 1, 0, newStation);
+        } else {
+          // Если станция не найдена, добавляем в конец
+          line.stations.push(newStation);
+        }
+      } else {
+        // Добавляем в конец
+        line.stations.push(newStation);
+      }
+
+      // Полностью пересоздаем сегменты для корректной работы
+      line.segments = [];
+
+      const stations = line.stations;
+      const stationCount = stations.length;
+
+      if (stationCount > 1) {
+        // Для обычных линий создаем сегменты между последовательными станциями
+        for (let i = 0; i < stationCount - 1; i++) {
+          const segmentId = `${stations[i].id}_${stations[i + 1].id}`;
+          line.segments.push({
+            id: segmentId,
+            fromStationId: stations[i].id,
+            toStationId: stations[i + 1].id,
+            timeMinutes: line.id === 4 ? 4 : 2 // БКЛ имеет 4 минуты, остальные 2
+          });
+        }
+
+        // Для кольцевых линий добавляем замыкающий сегмент
+        if (line.isCircular && stationCount >= 2) {
+          const closingSegmentId = `${stations[stationCount - 1].id}_${stations[0].id}`;
+
+          // Проверяем нет ли уже такого сегмента
+          const closingSegmentExists = line.segments.some(seg =>
+            seg.id === closingSegmentId ||
+            (seg.fromStationId === stations[stationCount - 1].id && seg.toStationId === stations[0].id)
+          );
+
+          if (!closingSegmentExists) {
+            line.segments.push({
+              id: closingSegmentId,
+              fromStationId: stations[stationCount - 1].id,
+              toStationId: stations[0].id,
+              timeMinutes: line.id === 4 ? 4 : 2
+            });
+          }
+        }
+      }
+
+      console.log('Station added successfully. Total stations in line:', stationCount);
+      console.log('Total segments in line:', line.segments.length);
     }
+
   },
+
+
+
 })
 
 export const {
@@ -222,7 +360,8 @@ export const {
   updateLineCurvature,
   alignLineToCircle,
   evenlyDistributeStations,
-  updateStationGradients
+  updateStationGradients,
+  addStation,
 } = metroSlice.actions
 
 export default metroSlice.reducer

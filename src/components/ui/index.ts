@@ -1,1 +1,6 @@
 export { Sidebar } from './sidebar/sidebar.tsx'
+export { Range } from './range/range.tsx'
+export { Dropdown } from './dropdown/dropdown.tsx'
+export { Input } from './input/input.tsx'
+export { Modal } from './modal/modal.tsx'
+export { Form } from './form/form.tsx'

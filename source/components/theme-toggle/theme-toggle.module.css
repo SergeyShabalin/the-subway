@@ -1,0 +1,97 @@
+.container {
+  display: flex;
+  justify-content: right;
+  padding: 15px;
+}
+
+.toggle {
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.container {
+  display: flex;
+  align-items: center;
+}
+
+.toggle {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.toggle:hover {
+  transform: scale(1.05);
+}
+
+.input {
+  display: none;
+}
+
+.icon {
+  grid-column: 1 / 1;
+  grid-row: 1 / 1;
+  transition: transform 500ms;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0.1;
+}
+
+.iconMoon {
+  color: #b4b4b4;
+}
+
+.iconSun {
+  color: #ffa500;
+}
+
+/* Состояние для светлой темы (checkbox не checked) */
+.input:not(:checked) ~ .iconMoon {
+  transform: scale(1);
+}
+
+.input:not(:checked) ~ .iconSun {
+  transform: scale(0) rotate(-360deg);
+}
+
+/* Состояние для темной темы (checkbox checked) */
+.input:checked ~ .iconMoon {
+  transform: scale(0) rotate(360deg);
+}
+
+.input:checked ~ .iconSun {
+  transform: scale(1) rotate(360deg);
+}
+
+@media (max-width: 768px) {
+  .toggle {
+    width: 48px;
+    height: 48px;
+  }
+
+  .icon svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .toggle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .icon svg {
+    width: 20px;
+    height: 20px;
+  }
+}
