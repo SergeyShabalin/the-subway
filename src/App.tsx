@@ -1,5 +1,5 @@
 import './global.css'
-import { ControlPanel, MainField } from '@/components'
+
 import { useRef, useState } from 'react'
 
 const App = () => {

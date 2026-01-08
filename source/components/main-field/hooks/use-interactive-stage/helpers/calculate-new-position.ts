@@ -1,5 +1,6 @@
-/** Расчитывает позицию для зумминга */
 import type { CalculateNewPositionArgs, NewPosition } from './types.ts'
+
+/** Расчитывает позицию для зумминга */
 
 export const calculateNewPosition = ({
   pointer,

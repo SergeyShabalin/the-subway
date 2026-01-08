@@ -1,71 +1,100 @@
 import { Text } from 'react-konva'
-
-import type { IStationLabelsProps } from '@components/station-labels/types.ts'
-import { useState, useMemo, useContext } from 'react'
+import { useMemo, useContext } from 'react'
 import { useMetro } from '@/store/hooks/use-metro.ts'
 import { ThemeContext } from '@/context'
 import { THEME_COLORS } from '@/const.ts'
-interface StationLabelsProps extends IStationLabelsProps {
-  lineDragOffset?: { x: number; y: number } | null
-}
+import type { StationLabelsComponentProps } from '@components/station-labels/types.ts'
 
-export const StationLabels = ({ dragOffsetsRef, lineDragOffset }: StationLabelsProps) => {
+export const StationLabels = ({
+                                dragOffsetsRef,
+                                lineDragOffset
+                              }: StationLabelsComponentProps) => {
   const { metroNetwork } = useMetro()
-  const [draggedLabelId, setDraggedLabelId] = useState<number | null>(null)
   const { theme } = useContext(ThemeContext)
-  console.log(theme)
-
-
   const themeColors = THEME_COLORS[theme]
-  // Создаем массив уникальных станций для лейблов
-  const uniqueStations = useMemo(() => {
-    const seenStations = new Set<number>()
-    const result = []
 
-    for (const line of metroNetwork) {
-      for (const station of line.stations) {
-        if (!seenStations.has(station.id)) {
-          seenStations.add(station.id)
-          result.push(station)
-        }
-      }
-    }
-
-    return result
-  }, [metroNetwork])
+  // Получаем все ВИЗУАЛЬНЫЕ станции (в новой структуре отрисовываем по визуальным точкам)
+  const visualStations = useMemo(() => {
+    return Object.values(metroNetwork.visuals.stations)
+  }, [metroNetwork.visuals.stations])
 
   return (
     <>
-      {uniqueStations.map((station) => {
-          // Находим первую линию, к которой принадлежит станция
-          const stationLine = metroNetwork.find(line =>
-            line.stations.some(s => s.id === station.id)
-          )
+      {visualStations.map((visualStation) => {
+        const visualId = visualStation.id
 
-          // Если линия перемещается, используем смещение линии для ВСЕХ элементов
-          const effectiveOffset = lineDragOffset  === stationLine?.id ? {
-            x: lineDragOffset.x,
-            y: lineDragOffset.y
-          } : (dragOffsetsRef.current[station.id] || { x: 0, y: 0 })
+        // Получаем связанные логические станции
+        const logicalIds = metroNetwork.connections.visualToLogical[visualId] || []
+        if (logicalIds.length === 0) {
+          console.warn(`No logical stations for visual station ${visualId}`)
+          return null
+        }
 
-          const isDragged = draggedLabelId === station.id
+        // Берем первую логическую станцию для имени (в пересадочном узле все имена одинаковые)
+        const firstLogicalId = logicalIds[0]
+        const logicalStation = metroNetwork.logic.stations[firstLogicalId]
+        if (!logicalStation) {
+          console.warn(`No logical station ${firstLogicalId} for visual station ${visualId}`)
+          return null
+        }
 
-          return (
-            <Text
-              key={`label-${station.id}`} // Уникальный ключ
-          id={`label-${station.id}`}
-          x={station.x + (station.labelOffset?.x || 0) + effectiveOffset.x}
-          y={station.y + (station.labelOffset?.y || 0) + effectiveOffset.y}
-          text={station.label}
-          fontSize={12}
-              fill={isDragged ? themeColors.stationLabelDragged : themeColors.stationLabel}
-          align="center"
-          verticalAlign="middle"
-          letterSpacing={1.2}
-          draggable={true}
+        // Получаем линии, проходящие через эту визуальную точку
+        const lineIds = metroNetwork.connections.stationLines[visualId] || []
+        const isTransfer = lineIds.length > 1 || visualStation.displayMode === 'multiple'
+
+        // Вычисляем смещения
+        let effectiveOffset = { x: 0, y: 0 }
+
+        // 1. Для каждой логической станции проверяем индивидуальное смещение
+        logicalIds.forEach(logicalId => {
+          const stationOffset = dragOffsetsRef?.current?.[logicalId]
+          if (stationOffset) {
+            effectiveOffset.x += stationOffset.x
+            effectiveOffset.y += stationOffset.y
+          }
+        })
+
+        // 2. Смещение линии (применяем ко всем линиям, проходящим через станцию)
+        lineIds.forEach(lineId => {
+          if (lineDragOffset && lineDragOffset.lineId === lineId) {
+            effectiveOffset.x += lineDragOffset.x || 0
+            effectiveOffset.y += lineDragOffset.y || 0
+          }
+        })
+
+        // Вычисляем финальные координаты с округлением
+        const x = Math.round(
+          visualStation.x +
+          (visualStation.labelOffset?.x || 0) +
+          effectiveOffset.x
+        )
+
+        const y = Math.round(
+          visualStation.y +
+          (visualStation.labelOffset?.y || 0) +
+          effectiveOffset.y
+        )
+
+        return (
+          <Text
+            key={`label-${visualId}`}
+            id={`label-${visualId}`}
+            x={x}
+            y={y}
+            text={logicalStation.name}
+            fontSize={isTransfer ? 13 : 12}
+            fontWeight={isTransfer ? 'bold' : 'normal'}
+            fill={themeColors.stationLabel}
+            align="center"
+            listening={true}
+            perfectDrawEnabled={false}
+            shadowForStrokeEnabled={false}
+            verticalAlign="middle"
+            letterSpacing={1.5}
+            draggable={true}
           />
         )
-        })}
+      })}
     </>
   )
 }

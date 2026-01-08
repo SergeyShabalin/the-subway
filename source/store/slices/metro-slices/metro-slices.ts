@@ -1,17 +1,16 @@
 import { createSlice } from '@reduxjs/toolkit'
 
-import type { Line } from '../../components/stations/station/types.ts'
-import { metroNetwork } from '@store/data/metro-network.ts'
 
+import { metroNetwork } from '@store/data/metro-network.ts'
+import type { IMetroNetwork } from '@store/data/types.ts'
 export interface MetroState {
-  metroNetwork: Line[]
+  metroNetwork: IMetroNetwork
   activeLineId: number | null
   selectedStations: number[]
 }
 
 const initialState: MetroState = {
   metroNetwork,
-  activeLineId: metroNetwork[0]?.id || null,
   selectedStations: [],
 }
 

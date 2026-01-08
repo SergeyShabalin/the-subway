@@ -1,7 +1,7 @@
 // MainField.tsx — заменяем по содержимому
 import { Layer, Stage as ReactStage } from 'react-konva'
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { useInteractiveStage } from '../../../source/components/main-field/hooks/use-interactive-stage.ts'
+import { useInteractiveStage } from '../../../source/components/main-field/hooks/use-interactive-stage/use-interactive-stage.ts'
 import type { Stage } from 'konva/lib/Stage'
 
 import type { IMainFieldProps } from '@components/main-field/types.ts'
@@ -74,7 +74,7 @@ const MainField = ({
         width={stageSize.width}
         height={stageSize.height}
         ref={stageRef}
-        onWheel={handleWheel}
+
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseDown={handleMouseDown}

@@ -9,7 +9,7 @@ interface StationLabelsProps extends IStationLabelsProps {
 }
 
 export const StationLabels = ({ dragOffsetsRef, lineDragOffset }: StationLabelsProps) => {
-  const { metroNetwork, activeLineId } = useMetro()
+  const { metroNetwork } = useMetro()
   const [draggedLabelId, setDraggedLabelId] = useState<number | null>(null)
 
   // Создаем массив уникальных станций для лейблов

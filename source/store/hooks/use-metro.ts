@@ -8,7 +8,7 @@ export const useMetro = () => {
   const metroNetwork = useSelector(
     (state: RootState) => state.metro.metroNetwork,
   )
-  console.log('metroNetwork', metroNetwork)
+
   return {
     metroNetwork,
     actions: {},
